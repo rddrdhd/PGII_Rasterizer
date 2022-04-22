@@ -119,12 +119,12 @@ Matrix4x4 Camera::getMatrixMVP() {
 Matrix4x4 Camera::getMatrixMV() {
 	return this->getMatrixV() * this->getMatrixM();
 }
-
-Matrix4x4 Camera::getMatrixMN() {
-	Matrix4x4 MN = this->getMatrixM();
-	MN.EuclideanInverse();
-	MN.Transpose();
-	return MN;
+ /* M matrix but for normals */
+Matrix4x4 Camera::getMatrixMn() {
+	Matrix4x4 Mn = this->getMatrixM();
+	Mn.EuclideanInverse();
+	Mn.Transpose();
+	return Mn;
 }
 
 Vector3 Camera::getViewDir() {

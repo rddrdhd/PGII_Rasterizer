@@ -14,7 +14,6 @@ layout ( location = 0 ) out vec4 FragColor;
 
 mat3x3 TBN;
 in vec3 omega_o_es;
-in vec3 omega_o;
 in vec2 tex_coord;
 in vec3 reflected_normal_ws;
 flat in int mat_index;
@@ -92,7 +91,7 @@ void main( void ) {
 
 	vec3 color =  k_d*Ld + (k_s*sb.x + sb.y) * Lr;
 	
-	FragColor = vec4( color.xyz, 1.0f );//  *getShadow( 0.001f, 10);
+	FragColor = vec4( Lr.xyz, 1.0f );//  *getShadow( 0.001f, 10);
 }
 
 /* mat3x3 TBN;

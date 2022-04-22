@@ -256,8 +256,8 @@ int Rasterizer::mainLoop()
 		Matrix4x4 MVP = this->camera_.getMatrixMVP();
 		SetMatrix4x4(this->shader_program_, MVP.data(), "MVP");
 
-		Matrix4x4 MN = this->camera_.getMatrixMN();
-		SetMatrix4x4(this->shader_program_, MN.data(), "MN");
+		Matrix4x4 Mn = this->camera_.getMatrixMn();
+		SetMatrix4x4(this->shader_program_, Mn.data(), "Mn");
 
 		Matrix4x4 MV = this->camera_.getMatrixMV();
 		SetMatrix4x4(this->shader_program_, MV.data(), "MV");
@@ -391,7 +391,6 @@ void Rasterizer::initPrefilteredEnvMapTexture() {
 /* TEXTURE 1 */
 void Rasterizer::InitOneEnvMapTexture()
 {
-
 	auto filename = "D:/School/PGII/project/pg2/data/maps/lebombo_prefiltered_env_map/2.exr";
 	Texture3f prefilteredEnv_map = Texture3f(filename);
 
