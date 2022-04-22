@@ -33,10 +33,8 @@ flat out int mat_index;
 
 void main( void )
 {
-
 	gl_Position = MVP * in_position; // model-space -> clip-space
 
-	vec3 in_position_ws = vec3(in_position.x, in_position.y, in_position.z);
 	v_normal = normalize(in_normal);
 	v_tangent = normalize(in_tangent);
 
@@ -44,34 +42,22 @@ void main( void )
 	unified_normal_ws = normalize( tmp.xyz / tmp.w );
 
 	vec4 hit_es = MV * in_position;
-	vec3 omega_o_es  = normalize (hit_es.xyz/hit_es.w); 
-
 	vec3 omega_i_es = normalize( hit_es.xyz / hit_es.w );
+	omega_o_es = -omega_i_es;
 
-	if (dot(unified_normal_ws, omega_i_es) < 0.0f) {
+	vec4 tmp2 = in_position - vec4(camera_pos.xyz, 1.0f);
+	omega_o = normalize(vec3(tmp2.xyz));
+
+	if (dot(unified_normal_ws, omega_i_es) > 0.0f) {
 		unified_normal_ws *= -1.0f;
 	}
 
 	vec4 hit_ws = M * in_position;
 	vec3 omega_o_ws = normalize(camera_pos - (hit_ws.xyz/hit_ws.w));
-
-	vec4 tmp2 = MN * in_position;
-	vec3 unified_normal_es = normalize(tmp2.xyz/tmp2.w);
-
-	if(dot(unified_normal_es, omega_o_es) < 0.0f) {
-		unified_normal_es *= -1.0f;
-	}
-	
-	omega_o_es = -omega_i_es;
-
-	vec4 tmp3 = in_position - vec4(camera_pos.x,camera_pos.y,camera_pos.z, 1.0f);
-	omega_o = normalize(vec3(tmp3.x, tmp3.y, tmp3.z));
+	reflected_normal_ws = (reflect( omega_o_ws ,  normalize(unified_normal_ws)));
 
 	tex_coord = in_texcoord;
-	mat_index = in_material_index;
-	
-	reflected_normal_ws = (reflect( omega_o_ws ,  normalize(unified_normal_ws)));
-	
+	mat_index = in_material_index;	
 
 	//SHADOW
 	//vec4 tmp3 = MLP * vec4( in_position.xyz, 1.0f );

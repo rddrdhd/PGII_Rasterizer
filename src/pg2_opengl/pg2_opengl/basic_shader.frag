@@ -39,48 +39,25 @@ vec2 c2s(vec3 normal) {
 
 	return vec2(u, v);
 }
+
 vec3 getIntegration(float alpha, float ct_o) {
 	float x = (log(alpha) + 7.0f) / 7.0f;
 	vec2 uv = vec2(ct_o, x);
 	return texture(integration_map, uv).rgb;
 }
+
 vec3 getIrradiance() {
-	vec2 uv = c2s(unified_normal_ws);
+	vec2 uv = c2s(v_normal);
 	//if(uv.x > uv.y){ return vec3(0,uv.x,0); }else{ return vec3(uv.y,0,uv.y);}
 	vec3 tex_color = texture(irradiance_map, uv).rgb;
 	//if(tex_color == vec3(0,0,0)){return vec3(1,0,0);}else{return vec3(0,1,0);}
 	return tex_color ; 
 }
 
-struct Material {
-	vec3 diffuse;
-	uint64_t tex_diffuse;
-
-	vec3 rma;
-	uint64_t tex_rma;
-
-	vec3 norm;
-	uint64_t tex_norm;
-};
-
-layout ( std430, binding = 0) readonly buffer Materials {
-	Material materials[]; // only the last member can be unsized array
-};
-
-mat3 getTBN() {
-	vec3 n = normalize(v_normal);
-	vec3 t = normalize(v_tangent - dot(v_tangent, n) * n);
-	vec3 b = normalize(cross(n, t));
-	return mat3(t, b, n);
-}
-
-vec3 getPrefEnv(float roughness) {
+vec3 getPrefEnv(float alpha) {
+	float roughness = alpha * alpha;
 	const float maxLevel = 6;
-	
-	//float x = (log(alpha) + 6.0f) / 6.0f;
 	vec2 uv = c2s(reflected_normal_ws);
-	
-	//if(uv.x > uv.y){ return vec3(0,uv.x,0); }else{ return vec3(uv.y,0,uv.y);}
 	vec3 tex_color = (textureLod(prefilteredEnv_map, uv, roughness * maxLevel).rgb);
 	//vec3 tex_color = (textureLod(prefilteredEnv_map, uv, 2).rgb);
 	//vec3 tex_color = texture(prefilteredEnv_map,uv).rgb;
@@ -88,28 +65,34 @@ vec3 getPrefEnv(float roughness) {
 	return tex_color;
 }
 
+float Fresnell(float ct_o, float n1, float n2 ) {
+	if (ct_o == 0) return 0;
+	float f_0 = pow((n1-n2)/(n1+n2), 2);
+	return f_0 + (1 - f_0) * pow(1 - ct_o, 5);
+}
+
 void main( void ) {
-
-	//TESTING
-	vec2 tex_coords = vec2(gl_FragCoord.x / 640.0f, gl_FragCoord.y /480.0f);
-	FragColor = vec4(textureLod(prefilteredEnv_map, tex_coords,5.0f).xyz, 1.0f);
-
-	float alpha = 0.1f; // reflectivity from Material
-
-	vec3 normal_shade  = getNormalShade(v_normal);
-	vec3 refl_shade  = getNormalShade(normalize(reflected_normal_ws)); // vypada legit
-	vec3 blue_albedo = vec3(0,0,1); // jakoze modra
-	vec3 irr =  getIrradiance() ;//L_S_d
-	vec3 env = getPrefEnv(alpha);
-
-	float ct_o = dot(unified_normal_ws, omega_o_es);
-	vec3 integr = getIntegration(alpha, ct_o);
-	vec3 albedo =vec3(0.5f,0.5f, 0.5f); // seda
+	// TODO - get those data from files
+	float metalicity = 0.3f;
+	float reflectivity = 0.5f;
+	float alpha = 0.2f; // <0,1> where 0 = mirror, 1 = dim
+	vec3 albedo = vec3(0.5f,0.5f,0.5f); // gray 
 	
-	//vec3 env = getPrefEnv(0.3);//L_S_r
-	//FragColor = vec4(albedo * irr.xyz, 1.0f);
-	FragColor = vec4( integr.xyz, 1.0f );//  *getShadow( 0.001f, 10);
-	//l_d_r = albedo * irradiance ?
+	/* NORMAL shader */
+	//vec3 normal_shade  = getNormalShade(v_normal);
+
+	/* PBR shader */
+	float ct_o = dot(unified_normal_ws, omega_o_es);
+	float k_s = Fresnell(ct_o, 1.0f, 4.0); // 4.0 = IOR
+	float k_d = (1 - k_s) * (1 - metalicity);
+
+	vec3 sb = getIntegration(alpha, ct_o);
+	vec3 Ld = albedo * getIrradiance(); 
+	vec3 Lr = getPrefEnv(alpha);
+
+	vec3 color =  k_d*Ld + (k_s*sb.x + sb.y) * Lr;
+	
+	FragColor = vec4( color.xyz, 1.0f );//  *getShadow( 0.001f, 10);
 }
 
 /* mat3x3 TBN;
@@ -137,39 +120,6 @@ mat3 getTBN() {
 	return mat3(t, b, n);
 }
 
-vec3 rotateVector(vec3 v, vec3 n) {
-	vec3 o1 =  normalize((abs(n.x) > abs(n.z)) ? vec3(-n.y, n.x, 0.0f) : vec3(0.0f, -n.z, n.y));
-	vec3 o2 = normalize(cross(o1, n));
-	return mat3(o1,o2,n) * v;
-}
-
-vec3 getNormal_raw() {
-	vec3 norm = materials[mat_index].norm.rgb;
-	if (norm == vec3(1.0f,1.0f,1.0f)) {
-		//return normalize( 2* texture(sampler2D(materials[mat_index].tex_norm), tex_coord).rgb - vec3(1,1,1));
-		vec3 n_ls = normalize( 2* texture(sampler2D(materials[mat_index].tex_norm), tex_coord).rgb - vec3(1.0f,1.0f,1.0f));
-		//vec3 n_ls = normalize(texture(sampler2D(materials[mat_index].tex_norm), tex_coord).rgb);
-		return TBN * n_ls;
-		return  normalize(TBN * n_ls);
-	}
-	return v_normal;
-}
-
-vec3 getNormal_unified() {
-	return normalize((MVN * vec4(getNormal_raw().xyz, 0.0f)).xyz);
-}
-
-vec2 getUV(vec3 v) {
-	float p = atan(v.y, v.x);
-	float phi = (p < 0) ? p + 2 * M_PI : p;
-	float theta = acos(v.z);
-
-	return vec2(phi / (2 * M_PI), theta / M_PI);
-}
-vec3 getIrradiance() {
-	vec2 uv = getUV(getNormal_raw());
-	return texture(irradiance_map, uv).rgb;
-}
 vec3 getAlbedo() {
 	vec3 result = materials[mat_index].diffuse.rgb;
 	if (result == vec3(1,1,1)) {
