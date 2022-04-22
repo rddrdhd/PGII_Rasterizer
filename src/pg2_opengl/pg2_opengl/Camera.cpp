@@ -33,36 +33,25 @@ Camera::Camera(const int width, const int height, const float fov_y, const Vecto
 	Vector3 view_dir = view_at_ - view_from_;
 	view_dir.Normalize();
 	auto viewDir_sph = getSphericalCoords(view_dir);
-	this->yaw_ = viewDir_sph.first;		//atan2f(view_dir.y, view_dir.x) - PI2;
-	this->pitch_ = viewDir_sph.second;	//acosf(-view_dir.z) - PI2;
+	this->yaw_ = viewDir_sph.first;		//atan2f(view_dir.y, view_dir.x) - PI2?
+	this->pitch_ = viewDir_sph.second;	//acosf(-view_dir.z) - PI2?
 
 	this->velocity_ = 5.0f;
-
-	//this->view_direction_ = view_at_ - view_from_;
-	//this->view_direction_.Normalize();
 
 	this->near_plane_ = near_plane;
 	this->far_plane_ = far_plane;
 
-	//this->view_matrix_ = getMatrixV();
-	//this->projection_matrix_ = getMatrixP();
 	this->last_mouse_pos_ = Vector2(0, 0);
 }
 
 
 void Camera::update(int width, int height) {
-	/*** Vytvorte metodu Update, ktera provede výpocet vsech potrebnych matic (V, P) na zaklade aktualnich parametru kamery.
-	Jednotlive matice a jejich kombinace (MVP pro transformaci vertexu do Clip Space, MV pro transformaci vertexu do
-	Eye space, MN pro transformaci normal do Eye Space apod.) pak muzete podle potreby predavat (pres ukazatel
-	na prvni prvek - metoda data) ve vykreslovaci smycce pomoci funkce SetMatrix4x4 (gutils.cpp) aktualnimu shaderu.
-	Zaroven ve vykreslovaci smycce zajistete, aby se kamera vhodnym zpusobem pohybovala. ***/
 	
 	this->width_ = width;
 	this->height_ = height;
 
 	float aspect = (float)this->width_ / (float)this->height_;
 	this->fov_x_ = 2 * atan(aspect * tan(this->fov_y_ / 2.0f));
-
 }
 
 Matrix4x4 Camera::getMatrixM() {
@@ -123,7 +112,6 @@ Matrix4x4 Camera::getMatrixV() {
 	return V;
 }
 
-/* MODEL VIEW PROJECTION MATRIX */
 Matrix4x4 Camera::getMatrixMVP() {
 	return this->getMatrixP() * this->getMatrixV() * this->getMatrixM();
 }
@@ -144,7 +132,9 @@ Vector3 Camera::getViewDir() {
 	result.Normalize();
 	return result;
 } 
-const float cameraSpeed = 0.1f; // adjust accordingly
+
+const float cameraSpeed = 0.1f; // idk
+
 void Camera::moveForward() {
 	
 	this->view_from_ -= view_from_ * cameraSpeed;
@@ -202,7 +192,6 @@ Matrix3x3 Camera::Rx(float alpha) {
 		0,	cos(alpha),	-sin(alpha),
 		0,	sin(alpha),	cos(alpha)
 	};
-
 }
 
 Matrix3x3 Camera::Ry(float alpha) {

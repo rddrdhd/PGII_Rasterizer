@@ -76,9 +76,8 @@ int Rasterizer::initOpenGL() {
 int Rasterizer::loadMesh(const std::string& file_name)
 {
 	LoadOBJ(file_name, this->scene_, this->materials_, false);
-	//obhak
 
-	// TODO more, uz vim jak mam ziskavat veci z toho
+	// prace s mapami a shared pointry -___-
 	if (file_name == "../../../data/cube/piece_02.obj") {
 		auto normal_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
 		this->materials_["white_plastic"]->set_texture(Map::kNormal, normal_tex);
@@ -106,6 +105,7 @@ int Rasterizer::loadMesh(const std::string& file_name)
 				const int material_index = int(std::distance(std::begin(this->materials_), this->materials_.find(material->name())));
 				
 				Vertex3 vertex;
+
 				//for each triangle vertex
 				for (int i = 0; i < 3; ++i) 
 				{
@@ -114,7 +114,6 @@ int Rasterizer::loadMesh(const std::string& file_name)
 					dst_triangle.vertices[i].color = Vector3(1.0f, 1.0f, 1.0f);
 					dst_triangle.vertices[i].texture_coord = Vector2(src_triangle.texture_coord(i).x, src_triangle.texture_coord(i).y);
 					dst_triangle.vertices[i].tangent = src_triangle.tangent(i);
-					//dst_triangle.vertices[i].tangent.Print();
 					dst_triangle.vertices[i].material_index = material_index;
 
 					vertices_.push_back(dst_triangle.vertices[i]);
@@ -125,7 +124,6 @@ int Rasterizer::loadMesh(const std::string& file_name)
 			printf("Mesh loaded\n");
 		}
 	}
-
 	Triangle3 triangle;
 
 	return 0;
@@ -145,7 +143,7 @@ int Rasterizer::initBuffers()
 	
 	
 	// LAYOUT 0 == VERTEX
-	// layout=0, size=3, type=GL_FLOAT, normalized=false, stride=vertex_stride, pointer=offset od zacatku
+	// layout=0, size=3, type=GL_FLOAT, normalized=false, stride=vertex_stride, pointer=offset from the start
 	glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, vertex_stride, (void*)(offsetof(Vertex3, position)));
 	glEnableVertexAttribArray( 0 );
 
@@ -154,7 +152,7 @@ int Rasterizer::initBuffers()
 	glEnableVertexAttribArray( 1 );
 	
 	// LAYOUT 2 == TANGENT vec3
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, vertex_stride, (void*)(offsetof(Vertex3, position)));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, vertex_stride, (void*)(offsetof(Vertex3, tangent)));
 	glEnableVertexAttribArray( 2 );
 	
 	// LAYOUT 3 == TEXTURE vec2
@@ -170,11 +168,11 @@ int Rasterizer::initBuffers()
 	this->initPrefilteredEnvMapTexture();
 	//this->InitOneEnvMapTexture();//D:\School\PGII\project\pg2\data\maps\lebombo_prefiltered_env_map\0.exr
 
+	this->initIntegrationMapTexture("../../../data/maps/brdf_integration_map_ct_ggx.exr");
+
 	this->setIrradianceMap(); // TEXTURE 0
 	this->setPrefilteredEnvMap(); // TEXTURE 1
-
-	this->initIntegrationMapTexture("../../../data/maps/brdf_integration_map_ct_ggx.exr");
-	this->setIntegrationMap();
+	this->setIntegrationMap(); // TEXTURE 2
 	
 	return 0;
 }
@@ -220,22 +218,18 @@ int Rasterizer::initShaders(const std::string& vert_path, const std::string& fra
 
 	glUseProgram(this->shader_program_);
 
-
-
 	return 0;
 }
 
 int Rasterizer::mainLoop()
 {
-	//glPointSize(10.0f);
-	//glLineWidth(1.0f);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-//	glFrontFace(GL_CCW);
-//	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
+	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST); // zrusi pouziti z-bufferu, vykresleni se provede bez ohledu na poradi fragmentu z hlediska jejich pseudohloubky
 	glEnable(GL_CULL_FACE); // zrusi zahazovani opacne orientovanych ploch
-	//glDepthFunc(GL_LESS);
-	//glDepthRangef(0.0f, 1.0f);
+	glDepthFunc(GL_LESS);
+	glDepthRangef(0.0f, 1.0f);
 	// main loop
 	while (!glfwWindowShouldClose(this->window_)) {
 		
@@ -252,7 +246,6 @@ int Rasterizer::mainLoop()
 		glViewport(0, 0, this->camera_.getWidth(), this->camera_.getHeight());
 		// SET BACK THE MAIN SHADER PROGRAM AND THE VIEWPORT
 		glUseProgram(this->shader_program_);
-		
 		
 		#pragma endregion
 		
@@ -284,15 +277,8 @@ int Rasterizer::mainLoop()
 		setPrefilteredEnvMap();
 		setIntegrationMap();
 
-		/*
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, tex_integration_map_);
-		SetSampler(shader_program_, 2, "integration_map");*/
-
 		glBindVertexArray(this->vao_);
 
-		//glDrawArrays(GL_POINTS, 0, vertices_.size());
-		//glDrawArrays(GL_LINE_LOOP, 0, vertices_.size());
 		glDrawArrays(GL_TRIANGLES, 0, this->vertices_.size());
 
 		glfwSwapBuffers(this->window_);
@@ -318,12 +304,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		if(glfwGetKey(window, GLFW_KEY_D)==GLFW_PRESS)camera.moveRight();
 		if(glfwGetKey(window, GLFW_KEY_W)==GLFW_PRESS)camera.moveForward();
 		if(glfwGetKey(window, GLFW_KEY_S)==GLFW_PRESS)camera.moveBackward();
-			
 	}
 }
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
-	printf("x:%f y:%f\n", xpos, ypos);
+	// TODO
+	//printf("x:%f y:%f\n", xpos, ypos);
 	Camera& camera = reinterpret_cast<Rasterizer*>(glfwGetWindowUserPointer(window))->getCamera();
 	/*auto last_pos = camera.getLastMousePos();
 	float xmove, ymove;
@@ -348,8 +334,7 @@ void Rasterizer::InitIrradianceMapTexture(const std::string& file_name)
 
 	glGenTextures(1, &this->tex_irradiance_map_);
 	glBindTexture(GL_TEXTURE_2D, tex_irradiance_map_);
-	if (glIsTexture(tex_irradiance_map_))
-	{
+	if (glIsTexture(tex_irradiance_map_)) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -403,6 +388,7 @@ void Rasterizer::initPrefilteredEnvMapTexture() {
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+/* TEXTURE 1 */
 void Rasterizer::InitOneEnvMapTexture()
 {
 
@@ -460,6 +446,7 @@ void Rasterizer::initIntegrationMapTexture(const std::string& file_name)
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
+
 /* TEXTURE 2 */
 int Rasterizer::setIntegrationMap()
 {
@@ -470,6 +457,7 @@ int Rasterizer::setIntegrationMap()
 
 	return S_OK;
 }
+
 /* load shader code from the text file */
 int Rasterizer::LoadShader(const std::string& file_name, std::vector<char>& shader)
 {
@@ -568,16 +556,6 @@ void GLAPIENTRY gl_callback_1(GLenum source, GLenum type, GLuint id, GLenum seve
 void framebuffer_resize_callback_1(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
-
-
-/*
-int Rasterizer::InitIrradianceMapTexture() {
-	glActiveTexture(GL_TEXTURE0); //aktivujeme nekterou z texturovacich jednotek, treba 0
-	glBindTexture(GL_TEXTURE_2D, tex_irradiance_map_);
-	SetSampler(shader_program_, 0, "irradiance_map"); // to je ta 0 textura
-	return S_OK;
-}
-*/
 
 void Rasterizer::resize(const int width, const int height) {
 	glViewport(0, 0, width, height);
