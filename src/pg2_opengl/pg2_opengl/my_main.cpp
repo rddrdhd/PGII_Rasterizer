@@ -22,8 +22,8 @@ int run() {
 	
 	Rasterizer rasterizer = Rasterizer(640, 480, deg2rad(45.0f), Vector3(-30, -30, 30), Vector3(0, 0, 0), 1000.0f, 0.1f);
 	rasterizer.initOpenGL();
-	//rasterizer.loadMesh("../../../data/cube/piece_02.obj");
-	rasterizer.loadMesh("../../../data/spheres/geospheres_5x5.obj");
+	rasterizer.loadMesh("../../../data/cube/piece_02.obj");
+	//rasterizer.loadMesh("../../../data/spheres/geospheres_5x5.obj");
 	
 	
 

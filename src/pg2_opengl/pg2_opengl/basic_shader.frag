@@ -22,7 +22,7 @@ flat in int mat_index;
 // uniforms
 uniform sampler2D irradiance_map;
 uniform sampler2D prefilteredEnv_map;
-//uniform sampler2D integration_map;
+uniform sampler2D integration_map;
 //uniform sampler2D shadow_map;
 //uniform mat4 MVN;
 
@@ -39,7 +39,11 @@ vec2 c2s(vec3 normal) {
 
 	return vec2(u, v);
 }
-
+vec3 getIntegration(float alpha, float ct_o) {
+	float x = (log(alpha) + 7.0f) / 7.0f;
+	vec2 uv = vec2(ct_o, x);
+	return texture(integration_map, uv).rgb;
+}
 vec3 getIrradiance() {
 	vec2 uv = c2s(unified_normal_ws);
 	//if(uv.x > uv.y){ return vec3(0,uv.x,0); }else{ return vec3(uv.y,0,uv.y);}
@@ -90,18 +94,21 @@ void main( void ) {
 	vec2 tex_coords = vec2(gl_FragCoord.x / 640.0f, gl_FragCoord.y /480.0f);
 	FragColor = vec4(textureLod(prefilteredEnv_map, tex_coords,5.0f).xyz, 1.0f);
 
-
+	float alpha = 0.1f; // reflectivity from Material
 
 	vec3 normal_shade  = getNormalShade(v_normal);
 	vec3 refl_shade  = getNormalShade(normalize(reflected_normal_ws)); // vypada legit
 	vec3 blue_albedo = vec3(0,0,1); // jakoze modra
 	vec3 irr =  getIrradiance() ;//L_S_d
-	vec3 env = getPrefEnv(0.1f);
+	vec3 env = getPrefEnv(alpha);
+
+	float ct_o = dot(unified_normal_ws, omega_o_es);
+	vec3 integr = getIntegration(alpha, ct_o);
 	vec3 albedo =vec3(0.5f,0.5f, 0.5f); // seda
 	
 	//vec3 env = getPrefEnv(0.3);//L_S_r
 	//FragColor = vec4(albedo * irr.xyz, 1.0f);
-	FragColor = vec4( env.xyz, 1.0f );//  *getShadow( 0.001f, 10);
+	FragColor = vec4( integr.xyz, 1.0f );//  *getShadow( 0.001f, 10);
 	//l_d_r = albedo * irradiance ?
 }
 

@@ -55,7 +55,7 @@ class Rasterizer {
 		
 		GLuint tex_integration_map_{ 0 };
 		void initIntegrationMapTexture(const std::string& file_name);
-		int SetIntegrationMap();
+		int setIntegrationMap();
 		float far_plane_, near_plane_;
 
 		GLuint vertex_shader_;

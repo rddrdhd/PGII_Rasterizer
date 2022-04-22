@@ -173,8 +173,8 @@ int Rasterizer::initBuffers()
 	this->setIrradianceMap(); // TEXTURE 0
 	this->setPrefilteredEnvMap(); // TEXTURE 1
 
-	//this->initIntegrationMapTexture("../../../data/maps/brdf_integration_map_ct_ggx.exr");
-	//this->setIntegrationMap();
+	this->initIntegrationMapTexture("../../../data/maps/brdf_integration_map_ct_ggx.exr");
+	this->setIntegrationMap();
 	
 	return 0;
 }
@@ -282,7 +282,7 @@ int Rasterizer::mainLoop()
 		
 		setIrradianceMap();
 		setPrefilteredEnvMap();
-
+		setIntegrationMap();
 
 		/*
 		glActiveTexture(GL_TEXTURE2);
@@ -440,6 +440,7 @@ int Rasterizer::setPrefilteredEnvMap()
 	return S_OK;
 }
 
+/* TEXTURE 2 */
 void Rasterizer::initIntegrationMapTexture(const std::string& file_name)
 {
 	glGenTextures(1, &this->tex_integration_map_);
@@ -459,7 +460,16 @@ void Rasterizer::initIntegrationMapTexture(const std::string& file_name)
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
+/* TEXTURE 2 */
+int Rasterizer::setIntegrationMap()
+{
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, tex_integration_map_);
 
+	SetSampler(shader_program_, 2, "integration_map");
+
+	return S_OK;
+}
 /* load shader code from the text file */
 int Rasterizer::LoadShader(const std::string& file_name, std::vector<char>& shader)
 {
