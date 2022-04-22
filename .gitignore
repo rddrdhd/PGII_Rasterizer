@@ -1,0 +1,9 @@
+src/pg2_opengl/.vs/
+src/pg2_opengl/pg2_opengl/pg2_opengl.vcxproj
+src/pg2_opengl/pg2_opengl.sln
+src/pg2_opengl/pg2_opengl/x64/
+src/pg2_opengl/x64/
+data/cube
+data/maps
+.vs/
+CppProperties.json
