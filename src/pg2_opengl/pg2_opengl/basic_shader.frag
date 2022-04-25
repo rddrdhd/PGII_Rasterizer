@@ -24,8 +24,7 @@ uniform sampler2D prefilteredEnv_map;
 uniform sampler2D integration_map;
 //uniform sampler2D shadow_map;
 uniform sampler2D rma_map; //4
-//uniform sampler2D normal_map; //5
-
+uniform sampler2D normal_map; //5
 
 vec3 getNormalShade(vec3 normal){ return (normal + vec3(1,1,1)) / 2;}
 
@@ -54,9 +53,15 @@ vec3 getIrradiance() {
 	//if(tex_color == vec3(0,0,0)){return vec3(1,0,0);}else{return vec3(0,1,0);}
 	return tex_color ; 
 }
+
 vec3 getRMA() {
 	vec2 uv = c2s(v_normal);
 	vec3 tex_color = texture(rma_map, uv).rgb;
+	return tex_color;
+}
+vec3 getNomalBumps() {
+	vec2 uv = c2s(v_normal);
+	vec3 tex_color = texture(normal_map, uv).rgb;
 	return tex_color;
 }
 
@@ -65,9 +70,7 @@ vec3 getPrefEnv(float alpha) {
 	const float maxLevel = 6;
 	vec2 uv = c2s(reflected_normal_ws);
 	vec3 tex_color = (textureLod(prefilteredEnv_map, uv, roughness * maxLevel).rgb);
-	//vec3 tex_color = (textureLod(prefilteredEnv_map, uv, 2).rgb);
-	//vec3 tex_color = texture(prefilteredEnv_map,uv).rgb;
-	//if(tex_color == vec3(0,0,0)){return vec3(1,0,0);}else{return vec3(0,1,0);}
+	//vec3 tex_color = texture(prefilteredEnv_map,uv).rgb; // for 1 map
 	return tex_color;
 }
 
@@ -80,10 +83,11 @@ float Fresnell(float ct_o, float n1, float n2 ) {
 void main( void ) {
 	// TODO - get those data from files
 	vec3 rma = getRMA();
-	float metalicity = 0.3f;
-	float reflectivity = 0.5f;
-	float alpha = 0.2f; // <0,1> where 0 = mirror, 1 = dim
+	float metalicity = rma.r;
+	float reflectivity = rma.g;
+	float alpha = rma.b; // <0,1> where 0 = mirror, 1 = dim == sqrt(roughness)
 	vec3 albedo = vec3(0.5f,0.5f,0.5f); // gray 
+	vec3 normalBumps = getNomalBumps();
 	
 	/* NORMAL shader */
 	//vec3 normal_shade  = getNormalShade(v_normal);
@@ -99,7 +103,7 @@ void main( void ) {
 
 	vec3 color =  k_d*Ld + (k_s*sb.x + sb.y) * Lr;
 	
-	FragColor = vec4( rma.xyz, 1.0f );//  *getShadow( 0.001f, 10);
+	FragColor = vec4( normalBumps.xyz, 1.0f );//  *getShadow( 0.001f, 10);
 }
 
 /* mat3x3 TBN;
