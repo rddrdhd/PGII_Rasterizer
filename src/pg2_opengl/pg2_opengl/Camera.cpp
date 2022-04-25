@@ -120,7 +120,7 @@ Matrix4x4 Camera::getMatrixMV() {
 	return this->getMatrixV() * this->getMatrixM();
 }
  /* M matrix but for normals */
-Matrix4x4 Camera::getMatrixMn() {
+Matrix4x4 Camera::getMatrixMVn() {
 	Matrix4x4 Mn = this->getMatrixM();
 	Mn.EuclideanInverse();
 	Mn.Transpose();

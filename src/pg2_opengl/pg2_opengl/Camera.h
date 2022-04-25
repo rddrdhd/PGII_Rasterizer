@@ -45,7 +45,7 @@ public:
 	Matrix4x4 getMatrixP(); // projekcni matice
 	Matrix4x4 getMatrixMVP();
 	Matrix4x4 getMatrixMV();
-	Matrix4x4 getMatrixMn(); //  pro normaly
+	Matrix4x4 getMatrixMVn(); //  pro normaly
 
 	void setVelocity(float velocity) { this->velocity_ = velocity; }
 

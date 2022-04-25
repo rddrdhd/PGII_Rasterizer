@@ -46,7 +46,7 @@ class Rasterizer {
 		GLuint vao_, vbo_;
 
 		GLuint tex_irradiance_map_;
-		void InitIrradianceMapTexture(const std::string& file_name);
+		void initIrradianceMapTexture(const std::string& file_name);
 		int setIrradianceMap();
 
 		GLuint tex_prefilteredEnv_map_{ 0 };
@@ -57,6 +57,14 @@ class Rasterizer {
 		void initIntegrationMapTexture(const std::string& file_name);
 		int setIntegrationMap();
 		float far_plane_, near_plane_;
+
+		GLuint tex_rma_map_;
+		void initRMATexture(const std::string& file_name);
+		int setRMATexture();
+
+		GLuint tex_normal_map_;
+		void initNormalTexture(const std::string& file_name);
+		int setNormalTexture();
 
 		GLuint vertex_shader_;
 		GLuint fragment_shader_;

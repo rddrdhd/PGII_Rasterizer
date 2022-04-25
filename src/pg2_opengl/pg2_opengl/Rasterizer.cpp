@@ -28,7 +28,7 @@ int Rasterizer::initOpenGL() {
 	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
 
 	this->window_ = glfwCreateWindow(this->camera_.getWidth(), this->camera_.getHeight(), "PG2 OpenGL", nullptr, nullptr);
-	if (!this->window_){
+	if (!this->window_) {
 		glfwTerminate();
 		return EXIT_FAILURE;
 	}
@@ -79,12 +79,10 @@ int Rasterizer::loadMesh(const std::string& file_name)
 
 	// prace s mapami a shared pointry -___-
 	if (file_name == "../../../data/cube/piece_02.obj") {
-		auto normal_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
-		this->materials_["white_plastic"]->set_texture(Map::kNormal, normal_tex);
-		auto rma_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
-		this->materials_["white_plastic"]->set_texture(Map::kRMA, rma_tex);
+		this->initRMATexture("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
+		this->initNormalTexture("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
 	}
-	
+
 	// for each surface
 	for (SceneGraph::iterator iter = this->scene_.begin(); iter != this->scene_.end(); ++iter)
 	{
@@ -98,16 +96,16 @@ int Rasterizer::loadMesh(const std::string& file_name)
 			Triangle3 dst_triangle; // local var
 
 			// for each triangle on the surface
-			for (Mesh::iterator iter = mesh->begin(); iter != mesh->end(); ++iter) 
+			for (Mesh::iterator iter = mesh->begin(); iter != mesh->end(); ++iter)
 			{
 				const auto& src_triangle = Triangle3i(**iter);
 				std::shared_ptr<Material> material = iter.triangle_material();
 				const int material_index = int(std::distance(std::begin(this->materials_), this->materials_.find(material->name())));
-				
+
 				Vertex3 vertex;
 
 				//for each triangle vertex
-				for (int i = 0; i < 3; ++i) 
+				for (int i = 0; i < 3; ++i)
 				{
 					dst_triangle.vertices[i].position = src_triangle.position(i);
 					dst_triangle.vertices[i].normal = src_triangle.normal(i);
@@ -119,7 +117,7 @@ int Rasterizer::loadMesh(const std::string& file_name)
 					vertices_.push_back(dst_triangle.vertices[i]);
 				}
 				//triangles_.push_back(dst_triangle);
-				
+
 			}
 			printf("Mesh loaded\n");
 		}
@@ -134,37 +132,36 @@ int Rasterizer::initBuffers()
 {
 	const int vertex_stride = sizeof(Vertex3); // velikost vertexu v bytech - pro krokovani v binarnim poli
 
-	glGenVertexArrays( 1, &this->vao_ );
-	glBindVertexArray(this->vao_ );
-	
-	glGenBuffers( 1, &this->vbo_);
-	glBindBuffer( GL_ARRAY_BUFFER, this->vbo_ );
-	glBufferData( GL_ARRAY_BUFFER, this->vertices_.size()*sizeof(Vertex3), this->vertices_.data(), GL_STATIC_DRAW );
-	
-	
+	glGenVertexArrays(1, &this->vao_);
+	glBindVertexArray(this->vao_);
+
+	glGenBuffers(1, &this->vbo_);
+	glBindBuffer(GL_ARRAY_BUFFER, this->vbo_);
+	glBufferData(GL_ARRAY_BUFFER, this->vertices_.size() * sizeof(Vertex3), this->vertices_.data(), GL_STATIC_DRAW);
+
+
 	// LAYOUT 0 == VERTEX
 	// layout=0, size=3, type=GL_FLOAT, normalized=false, stride=vertex_stride, pointer=offset from the start
-	glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, vertex_stride, (void*)(offsetof(Vertex3, position)));
-	glEnableVertexAttribArray( 0 );
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertex_stride, (void*)(offsetof(Vertex3, position)));
+	glEnableVertexAttribArray(0);
 
 	// LAYOUT 1 == NORMAL vec3
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertex_stride, (void*)(offsetof(Vertex3, normal)));
-	glEnableVertexAttribArray( 1 );
-	
+	glEnableVertexAttribArray(1);
+
 	// LAYOUT 2 == TANGENT vec3
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, vertex_stride, (void*)(offsetof(Vertex3, tangent)));
-	glEnableVertexAttribArray( 2 );
-	
+	glEnableVertexAttribArray(2);
+
 	// LAYOUT 3 == TEXTURE vec2
 	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, vertex_stride, (void*)(offsetof(Vertex3, position)));
-	glEnableVertexAttribArray( 3 );
+	glEnableVertexAttribArray(3);
 
 	// LAYOUT 4 == MATERIAL INDEX
 	glVertexAttribIPointer(4, 1, GL_INT, vertex_stride, (void*)(offsetof(Vertex3, position)));
-	glEnableVertexAttribArray( 4 ); //kazdy index, ktery popiseme, musime zenablovat
-	
+	glEnableVertexAttribArray(4); //kazdy index, ktery popiseme, musime zenablovat
 
-	this->InitIrradianceMapTexture("../../../data/maps/lebombo_irradiance_map.exr");
+	this->initIrradianceMapTexture("../../../data/maps/lebombo_irradiance_map.exr");
 	this->initPrefilteredEnvMapTexture();
 	//this->InitOneEnvMapTexture();//D:\School\PGII\project\pg2\data\maps\lebombo_prefiltered_env_map\0.exr
 
@@ -173,7 +170,10 @@ int Rasterizer::initBuffers()
 	this->setIrradianceMap(); // TEXTURE 0
 	this->setPrefilteredEnvMap(); // TEXTURE 1
 	this->setIntegrationMap(); // TEXTURE 2
-	
+
+	this->setRMATexture(); // TEXTURE 4
+	this->setNormalTexture(); // TEXTURE 5
+
 	return 0;
 }
 
@@ -232,8 +232,8 @@ int Rasterizer::mainLoop()
 	glDepthRangef(0.0f, 1.0f);
 	// main loop
 	while (!glfwWindowShouldClose(this->window_)) {
-		
-		#pragma region ---first pass ---
+
+#pragma region ---first pass ---
 		//SHADOW STUFF GOES HERE
 
 		// draw the scene
@@ -246,9 +246,9 @@ int Rasterizer::mainLoop()
 		glViewport(0, 0, this->camera_.getWidth(), this->camera_.getHeight());
 		// SET BACK THE MAIN SHADER PROGRAM AND THE VIEWPORT
 		glUseProgram(this->shader_program_);
-		
-		#pragma endregion
-		
+
+#pragma endregion
+
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // state setting function
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // state using function
 
@@ -256,8 +256,8 @@ int Rasterizer::mainLoop()
 		Matrix4x4 MVP = this->camera_.getMatrixMVP();
 		SetMatrix4x4(this->shader_program_, MVP.data(), "MVP");
 
-		Matrix4x4 Mn = this->camera_.getMatrixMn();
-		SetMatrix4x4(this->shader_program_, Mn.data(), "Mn");
+		Matrix4x4 MVn = this->camera_.getMatrixMVn();
+		SetMatrix4x4(this->shader_program_, MVn.data(), "MVn");
 
 		Matrix4x4 MV = this->camera_.getMatrixMV();
 		SetMatrix4x4(this->shader_program_, MV.data(), "MV");
@@ -268,14 +268,17 @@ int Rasterizer::mainLoop()
 		//Matrix4x4 MLP = light_.getMatrixMVP();	
 		//SetMatrix4x4(shader_program_, MLP.data(), "MLP");
 
-		
+
 		Vector3 view_from = this->camera_.getViewFrom();
 		std::vector<float> vector = { view_from.x, view_from.y, view_from.z };
 		SetVector3(this->shader_program_, vector.data(), "camera_pos");
-		
+
 		setIrradianceMap();
 		setPrefilteredEnvMap();
 		setIntegrationMap();
+		//set shade();
+		setRMATexture();
+		setNormalTexture();
 
 		glBindVertexArray(this->vao_);
 
@@ -300,10 +303,10 @@ int Rasterizer::mainLoop()
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
 		Camera& camera = reinterpret_cast<Rasterizer*>(glfwGetWindowUserPointer(window))->getCamera();
-		if(glfwGetKey(window, GLFW_KEY_A)==GLFW_PRESS)camera.moveLeft();
-		if(glfwGetKey(window, GLFW_KEY_D)==GLFW_PRESS)camera.moveRight();
-		if(glfwGetKey(window, GLFW_KEY_W)==GLFW_PRESS)camera.moveForward();
-		if(glfwGetKey(window, GLFW_KEY_S)==GLFW_PRESS)camera.moveBackward();
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)camera.moveLeft();
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)camera.moveRight();
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)camera.moveForward();
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)camera.moveBackward();
 	}
 }
 
@@ -328,7 +331,7 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 }
 
 /* TEXTURE 0*/
-void Rasterizer::InitIrradianceMapTexture(const std::string& file_name)
+void Rasterizer::initIrradianceMapTexture(const std::string& file_name)
 {
 	Texture3f irradiance_map = Texture3f(file_name);
 
@@ -348,7 +351,7 @@ void Rasterizer::InitIrradianceMapTexture(const std::string& file_name)
 	}
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	
+
 }
 /* TEXTURE 0 */
 int Rasterizer::setIrradianceMap()
@@ -360,7 +363,6 @@ int Rasterizer::setIrradianceMap()
 
 	return S_OK;
 }
-
 
 /* TEXTURE 1 */
 void Rasterizer::initPrefilteredEnvMapTexture() {
@@ -378,7 +380,7 @@ void Rasterizer::initPrefilteredEnvMapTexture() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, max_level);
 		GLint level;
 
-		for ( level = 0; level <= max_level; ++level) {
+		for (level = 0; level <= max_level; ++level) {
 			auto filename = "D:/School/PGII/project/pg2/data/maps/lebombo_prefiltered_env_map/" + std::to_string(level) + ".exr";
 			auto tex = Texture3f(filename);
 			glTexImage2D(GL_TEXTURE_2D, level, GL_RGB32F, tex.width(), tex.height(), 0, GL_RGB, GL_FLOAT, tex.data());
@@ -456,6 +458,75 @@ int Rasterizer::setIntegrationMap()
 
 	return S_OK;
 }
+
+/* TEXTURE 4 */
+void Rasterizer::initRMATexture(const std::string& file_name) {
+	//auto rma_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
+//	this->materials_["white_plastic"]->set_texture(Map::kRMA, rma_tex);
+
+	Texture3u rma_map = Texture3u(file_name);
+
+	glGenTextures(1, &this->tex_rma_map_);
+	glBindTexture(GL_TEXTURE_2D, this->tex_rma_map_);
+	if (glIsTexture(this->tex_rma_map_))
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		// for HDR images use GL_RGB32F or GL_RGB16F as internal format !!!
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8,
+			rma_map.width(), rma_map.height(), 0,
+			GL_BGR, GL_UNSIGNED_BYTE, rma_map.data());
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+/* TEXTURE 4 */
+int Rasterizer::setRMATexture() {
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, this->tex_rma_map_);
+
+	SetSampler(this->shader_program_, 4, "rma_map");
+
+	return S_OK;
+}
+
+/* TEXTURE 5 */
+void Rasterizer::initNormalTexture(const std::string& file_name) {
+	//auto normal_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
+	//this->materials_["white_plastic"]->set_texture(Map::kNormal, normal_tex);
+
+	Texture3u normal_map = Texture3u(file_name);
+
+	glGenTextures(1, &this->tex_normal_map_);
+	glBindTexture(GL_TEXTURE_2D, this->tex_normal_map_);
+	if (glIsTexture(this->tex_normal_map_))
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		// for HDR images use GL_RGB32F or GL_RGB16F as internal format !!!
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8,
+			normal_map.width(), normal_map.height(), 0,
+			GL_BGR, GL_UNSIGNED_BYTE, normal_map.data());
+		//glGenerateMipmap( GL_TEXTURE_2D );
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+/* TEXTURE 5 */
+int Rasterizer::setNormalTexture() {
+	glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_2D, this->tex_normal_map_);
+
+	SetSampler(this->shader_program_, 5, "normal_map");
+
+	return S_OK;
+}
+
 
 /* load shader code from the text file */
 int Rasterizer::LoadShader(const std::string& file_name, std::vector<char>& shader)

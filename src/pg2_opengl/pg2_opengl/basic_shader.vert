@@ -10,7 +10,7 @@ layout ( location = 4 ) in int in_material_index;
 
 /* uniform variables */
 
-uniform mat4 Mn;
+uniform mat4 MVn;
 uniform mat4 MVP;
 uniform mat4 MV;
 uniform mat4 M;
@@ -37,7 +37,7 @@ void main( void )
 	v_normal = normalize(in_normal);
 	v_tangent = normalize(in_tangent);
 
-	vec4 tmp = Mn * vec4( v_normal.xyz, 1.0f ); 
+	vec4 tmp = MVn * vec4( v_normal.xyz, 1.0f ); 
 	unified_normal_ws = normalize( tmp.xyz / tmp.w );
 
 	vec4 hit_es = MV * in_position;
