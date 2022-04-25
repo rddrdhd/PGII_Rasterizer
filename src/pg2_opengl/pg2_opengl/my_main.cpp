@@ -27,7 +27,7 @@ int run() {
 	
 	
 
-	rasterizer.initBuffers();
+	rasterizer.initBuffersAndTextures();
 	rasterizer.initShaders("basic_shader.vert", "basic_shader.frag");
 	
 	rasterizer.mainLoop();

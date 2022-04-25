@@ -4,7 +4,6 @@
 
 #define M_PI 3.1415926535897932384626433832795
 
-
 in vec3 v_normal;
 in vec3 v_tangent;
 in vec3 unified_normal_ws;
@@ -23,8 +22,9 @@ uniform sampler2D irradiance_map;
 uniform sampler2D prefilteredEnv_map;
 uniform sampler2D integration_map;
 //uniform sampler2D shadow_map;
-uniform sampler2D rma_map; //4
-uniform sampler2D normal_map; //5
+uniform sampler2D rma_map; 
+uniform sampler2D normal_map; 
+uniform sampler2D albedo_map;
 
 vec3 getNormalShade(vec3 normal){ return (normal + vec3(1,1,1)) / 2;}
 
@@ -48,10 +48,19 @@ vec3 getIntegration(float alpha, float ct_o) {
 
 vec3 getIrradiance() {
 	vec2 uv = c2s(v_normal);
-	//if(uv.x > uv.y){ return vec3(0,uv.x,0); }else{ return vec3(uv.y,0,uv.y);}
+	// if(uv.x > uv.y){ return vec3(0,uv.x,0); }else{ return vec3(uv.y,0,uv.y);}
 	vec3 tex_color = texture(irradiance_map, uv).rgb;
-	//if(tex_color == vec3(0,0,0)){return vec3(1,0,0);}else{return vec3(0,1,0);}
+	// if(tex_color == vec3(0,0,0)){return vec3(1,0,0);}else{return vec3(0,1,0);}
 	return tex_color ; 
+}
+
+vec3 getPrefEnv(float alpha) {
+	float roughness = alpha * alpha;
+	const float maxLevel = 6;
+	vec2 uv = c2s(reflected_normal_ws);
+	vec3 tex_color = (textureLod(prefilteredEnv_map, uv, roughness * maxLevel).rgb);
+	// vec3 tex_color = texture(prefilteredEnv_map,uv).rgb; 
+	return tex_color;
 }
 
 vec3 getRMA() {
@@ -64,16 +73,11 @@ vec3 getNomalBumps() {
 	vec3 tex_color = texture(normal_map, uv).rgb;
 	return tex_color;
 }
-
-vec3 getPrefEnv(float alpha) {
-	float roughness = alpha * alpha;
-	const float maxLevel = 6;
-	vec2 uv = c2s(reflected_normal_ws);
-	vec3 tex_color = (textureLod(prefilteredEnv_map, uv, roughness * maxLevel).rgb);
-	//vec3 tex_color = texture(prefilteredEnv_map,uv).rgb; // for 1 map
+vec3 getAlbedo(){
+	vec2 uv = c2s(v_normal);
+	vec3 tex_color = texture(albedo_map, uv).rgb;
 	return tex_color;
-}
-
+	} 
 float Fresnell(float ct_o, float n1, float n2 ) {
 	if (ct_o == 0) return 0;
 	float f_0 = pow((n1-n2)/(n1+n2), 2);
@@ -86,7 +90,7 @@ void main( void ) {
 	float metalicity = rma.r;
 	float reflectivity = rma.g;
 	float alpha = rma.b; // <0,1> where 0 = mirror, 1 = dim == sqrt(roughness)
-	vec3 albedo = vec3(0.5f,0.5f,0.5f); // gray 
+	vec3 albedo = getAlbedo(); // gray 
 	vec3 normalBumps = getNomalBumps();
 	
 	/* NORMAL shader */
@@ -103,42 +107,9 @@ void main( void ) {
 
 	vec3 color =  k_d*Ld + (k_s*sb.x + sb.y) * Lr;
 	
-	FragColor = vec4( normalBumps.xyz, 1.0f );//  *getShadow( 0.001f, 10);
+	FragColor = vec4( albedo.xyz, 1.0f );// krat getShadow( 0.001f, 10);
 }
-
-/* mat3x3 TBN;
-
-struct Material {
-	vec3 diffuse;
-	uvec2 tex_diffuse;
-
-	vec3 rma;
-	uvec2 tex_rma;
-
-	vec3 norm;
-	uvec2 tex_norm;
-};
-
-layout ( std430, binding = 0) readonly buffer Materials {
-	Material materials[]; // only the last member can be unsized array
-};
-
-
-mat3 getTBN() {
-	vec3 n = normalize(v_normal);
-	vec3 t = normalize(v_tangent - dot(v_tangent, n) * n);
-	vec3 b = normalize(cross(n, t));
-	return mat3(t, b, n);
-}
-
-vec3 getAlbedo() {
-	vec3 result = materials[mat_index].diffuse.rgb;
-	if (result == vec3(1,1,1)) {
-		result = texture(sampler2D( materials[mat_index].tex_diffuse), -tex_coord).rgb;
-	}
-	return result;
-}
-
+/*
 float getShadow(float bias, const int r) {
 	vec2 shadow_texel_size = 1.0f / textureSize(shadow_map, 0);
 	float shadow = 0.0f;
@@ -155,4 +126,3 @@ float getShadow(float bias, const int r) {
 
 	return shadow;
 }*/
-

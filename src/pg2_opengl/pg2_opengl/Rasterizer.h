@@ -22,7 +22,7 @@ class Rasterizer {
 		Rasterizer(int width, int height, float fovY, Vector3 viewFrom, Vector3 viewAt, float farPlane, float nearPlane);
 		int initOpenGL();
 		int loadMesh(const std::string& file_name); 
-		int initBuffers();
+		int initBuffersAndTextures();
 		int initShaders(const std::string& vert_path, const std::string& frag_path);
 		int mainLoop();
 		std::vector<Vertex3> getVertices() { return this->vertices_; };
@@ -65,6 +65,10 @@ class Rasterizer {
 		GLuint tex_normal_map_;
 		void initNormalTexture(const std::string& file_name);
 		int setNormalTexture();
+
+		GLuint tex_albedo_map_;
+		void initAlbedoTexture(const std::string& file_name);
+		int setAlbedoTexture();
 
 		GLuint vertex_shader_;
 		GLuint fragment_shader_;

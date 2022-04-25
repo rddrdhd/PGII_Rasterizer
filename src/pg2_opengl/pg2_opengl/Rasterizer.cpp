@@ -72,15 +72,15 @@ int Rasterizer::initOpenGL() {
 	return 0;
 }
 
-/* laods vertexes from .obj  */
+/* loads vertexes from .obj  */
 int Rasterizer::loadMesh(const std::string& file_name)
 {
 	LoadOBJ(file_name, this->scene_, this->materials_, false);
 
-	// prace s mapami a shared pointry -___-
 	if (file_name == "../../../data/cube/piece_02.obj") {
 		this->initRMATexture("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
 		this->initNormalTexture("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
+		this->initAlbedoTexture("D:/School/PGII/project/pg2/data/cube/scuffed-plastic6-alb.png");
 	}
 
 	// for each surface
@@ -127,8 +127,8 @@ int Rasterizer::loadMesh(const std::string& file_name)
 	return 0;
 }
 
-/* loads vertexes from .obj  */
-int Rasterizer::initBuffers()
+/* inits buffers and textures  */
+int Rasterizer::initBuffersAndTextures()
 {
 	const int vertex_stride = sizeof(Vertex3); // velikost vertexu v bytech - pro krokovani v binarnim poli
 
@@ -173,6 +173,7 @@ int Rasterizer::initBuffers()
 
 	this->setRMATexture(); // TEXTURE 4
 	this->setNormalTexture(); // TEXTURE 5
+	this->setAlbedoTexture(); // TEXTURE 6
 
 	return 0;
 }
@@ -276,9 +277,10 @@ int Rasterizer::mainLoop()
 		setIrradianceMap();
 		setPrefilteredEnvMap();
 		setIntegrationMap();
-		//set shade();
+		//setShadeMap();
 		setRMATexture();
 		setNormalTexture();
+		setAlbedoTexture();
 
 		glBindVertexArray(this->vao_);
 
@@ -353,6 +355,7 @@ void Rasterizer::initIrradianceMapTexture(const std::string& file_name)
 
 
 }
+
 /* TEXTURE 0 */
 int Rasterizer::setIrradianceMap()
 {
@@ -517,12 +520,46 @@ void Rasterizer::initNormalTexture(const std::string& file_name) {
 	}
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
+
 /* TEXTURE 5 */
 int Rasterizer::setNormalTexture() {
 	glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_2D, this->tex_normal_map_);
 
 	SetSampler(this->shader_program_, 5, "normal_map");
+
+	return S_OK;
+}
+
+/* TEXTURE 6 */
+void Rasterizer::initAlbedoTexture(const std::string& file_name) {
+
+	Texture3u albedo_map = Texture3u(file_name);
+
+	glGenTextures(1, &this->tex_albedo_map_);
+	glBindTexture(GL_TEXTURE_2D, this->tex_albedo_map_);
+	if (glIsTexture(this->tex_albedo_map_))
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		// for HDR images use GL_RGB32F or GL_RGB16F as internal format !!!
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8,
+			albedo_map.width(), albedo_map.height(), 0,
+			GL_BGR, GL_UNSIGNED_BYTE, albedo_map.data());
+		//glGenerateMipmap( GL_TEXTURE_2D );
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+ 
+/* TEXTURE 6 */
+int Rasterizer::setAlbedoTexture() {
+	glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_2D, this->tex_albedo_map_);
+
+	SetSampler(this->shader_program_, 6, "albedo_map");
 
 	return S_OK;
 }
@@ -635,5 +672,5 @@ void Rasterizer::resize(const int width, const int height) {
 	//glDeleteRenderbuffers(1, &tex_shadow_map_);
 	//glDeleteFramebuffers(1, &fbo_shadow_map);
 
-	initBuffers();
+	initBuffersAndTextures();
 }
