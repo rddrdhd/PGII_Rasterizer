@@ -143,7 +143,7 @@ int Rasterizer::initBuffersAndTextures()
 	// LAYOUT 0 == VERTEX
 	// layout=0, size=3, type=GL_FLOAT, normalized=false, stride=vertex_stride, pointer=offset from the start
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertex_stride, (void*)(offsetof(Vertex3, position)));
-	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(0); //kazdy index, ktery popiseme, musime zenablovat
 
 	// LAYOUT 1 == NORMAL vec3
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertex_stride, (void*)(offsetof(Vertex3, normal)));
@@ -158,8 +158,8 @@ int Rasterizer::initBuffersAndTextures()
 	glEnableVertexAttribArray(3);
 
 	// LAYOUT 4 == MATERIAL INDEX
-	glVertexAttribIPointer(4, 1, GL_INT, vertex_stride, (void*)(offsetof(Vertex3, position)));
-	glEnableVertexAttribArray(4); //kazdy index, ktery popiseme, musime zenablovat
+	glVertexAttribIPointer(4, 1, GL_INT, vertex_stride, (void*)(offsetof(Vertex3, material_index)));
+	glEnableVertexAttribArray(4);
 
 	this->initIrradianceMapTexture("../../../data/maps/lebombo_irradiance_map.exr");
 	this->initPrefilteredEnvMapTexture();
