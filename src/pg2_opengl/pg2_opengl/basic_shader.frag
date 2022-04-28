@@ -65,6 +65,7 @@ vec3 getPrefEnv(float alpha, vec3 normal) {
 
 vec3 getNomalBumps() {
 	vec3 tex_color = texture(normal_map, tex_coord).bgr;
+	//tex_color = normalize(tex_color * 2.0 - 1.0);
 	return tex_color;
 }
 vec3 getAlbedo(){
@@ -86,7 +87,7 @@ mat3 getTBNMatrix() {
 	vec3 n = normalize(unified_normal_ws);
 	vec3 t = normalize(v_tangent - dot(v_tangent, n) * n);
 	vec3 b = normalize(cross(n, t));
-	return mat3(t, b, n);
+	return transpose(mat3(t, b, n));
 }
 
 vec3 tonemapping(vec3 color, float gamma , float exposure){
