@@ -60,7 +60,6 @@ vec3 getPrefEnv(float alpha, vec3 normal) {
 	vec3 omega_i_ws = reflect( -omega_o_ws ,  normalize(normal));
 	vec2 uv = c2s(omega_i_ws);
 	vec3 tex_color = (textureLod(prefilteredEnv_map, uv, roughness * maxLevel).rgb);
-	// vec3 tex_color = texture(prefilteredEnv_map,uv).rgb; 
 	return tex_color;
 }
 
@@ -84,8 +83,8 @@ vec3 getRMA() {
 }
 
 mat3 getTBNMatrix() {
-	vec3 n = normalize(v_normal);
-	vec3 t = normalize(v_tangent);
+	vec3 n = normalize(unified_normal_ws);
+	vec3 t = normalize(v_tangent - dot(v_tangent, n) * n);
 	vec3 b = normalize(cross(n, t));
 	return mat3(t, b, n);
 }
@@ -97,35 +96,32 @@ vec3 tonemapping(vec3 color, float gamma , float exposure){
 	return color;
 }
 
-// omega_o = view_from - hit * view_from - hit
 void main( void ) {
 	vec3 rma = getRMA();
 	float metalicity = rma.r;
-	float ambient_occ = rma.b;
+	float ambient_occlusion = rma.b;
 	float roughness = rma.g;
 	float alpha = pow(roughness,2); 
 	vec3 albedo = getAlbedo();  
-	vec3 normalBumps = getNomalBumps();
-	vec3 bumped_normal = getTBNMatrix() * (2*normalBumps - vec3(1.0f));
+	vec3 bumped_normal = getTBNMatrix() * (2*getNomalBumps() - vec3(1.0f));
 
 	if (dot(bumped_normal, omega_o_ws) < 0.0f) {
 		bumped_normal *= -1.0f;
 	}
 
-	float ct_o = dot(bumped_normal, omega_o_ws); // cosinus theta o
+	float cosinus_theta_o = dot(bumped_normal, omega_o_ws);
 	
 	
-	float k_s = Fresnell(ct_o, 1.0f, 4.0); // 4.0 = IOR
+	float k_s = Fresnell(cosinus_theta_o, 1.0f, 4.0); // 4.0 = IOR
 	float k_d = (1 - k_s) * (1 - metalicity);
 
-	vec3 sb = getIntegration(alpha, ct_o);
+	vec3 sb = getIntegration(alpha, cosinus_theta_o);
 	vec3 Ld = albedo * getIrradiance(bumped_normal); 
-	vec3 Lr = getPrefEnv(alpha, bumped_normal);
+	vec3 Lr = getPrefEnv(0, bumped_normal);
 
 	vec3 color =  k_d*Ld + (k_s*sb.x + sb.y) * Lr;
-	color = tonemapping(color, 2.2f, 1.5f);
-	FragColor = vec4( color.xyz,1.0f) * ambient_occ;
-	//FragColor = vec4(color.rgb, 1.0f ) * ambient_occ; krat getShadow( 0.001f, 10);
+	vec3 mapped_color = tonemapping(color, 2.2f, 1.5f);
+	FragColor = vec4( mapped_color.xyz,1.0f) * ambient_occlusion;
 }
 /*
 float getShadow(float bias, const int r) {
