@@ -13,8 +13,8 @@ layout ( location = 0 ) out vec4 FragColor;
 
 mat3x3 TBN;
 in vec3 omega_o_es;
+in vec3 omega_o_ws;
 in vec2 tex_coord;
-in vec3 reflected_normal_ws;
 flat in int mat_index;
 
 // uniforms
@@ -41,8 +41,7 @@ vec2 c2s(vec3 normal) {
 }
 
 vec3 getIntegration(float alpha, float ct_o) {
-	float x = (log(alpha) + 7.0f) / 7.0f;
-	vec2 uv = vec2(ct_o, x);
+	vec2 uv = vec2(ct_o, alpha);
 	return texture(integration_map, uv).rgb;
 }
 
@@ -57,25 +56,20 @@ vec3 getIrradiance() {
 vec3 getPrefEnv(float alpha) {
 	float roughness = alpha * alpha;
 	const float maxLevel = 6;
-	vec2 uv = c2s(reflected_normal_ws);
+	
+	vec3 omega_i_ws = reflect( -omega_o_ws ,  normalize(unified_normal_ws));
+	vec2 uv = c2s(omega_i_ws);
 	vec3 tex_color = (textureLod(prefilteredEnv_map, uv, roughness * maxLevel).rgb);
 	// vec3 tex_color = texture(prefilteredEnv_map,uv).rgb; 
 	return tex_color;
 }
 
-vec3 getRMA() {
-	vec2 uv = c2s(v_normal);
-	vec3 tex_color = texture(rma_map, uv).rgb;
-	return tex_color;
-}
 vec3 getNomalBumps() {
-	vec2 uv = c2s(v_normal);
-	vec3 tex_color = texture(normal_map, uv).rgb;
+	vec3 tex_color = texture(normal_map, tex_coord).rgb;
 	return tex_color;
 }
 vec3 getAlbedo(){
-	vec2 uv = c2s(v_normal);
-	vec3 tex_color = texture(albedo_map, uv).rgb;
+	vec3 tex_color = texture(albedo_map, tex_coord).rgb;
 	return tex_color;
 	} 
 float Fresnell(float ct_o, float n1, float n2 ) {
@@ -84,20 +78,37 @@ float Fresnell(float ct_o, float n1, float n2 ) {
 	return f_0 + (1 - f_0) * pow(1 - ct_o, 5);
 }
 
+vec3 getRMA() {
+	vec3 tex_color = texture(rma_map, tex_coord).rgb;
+	return tex_color;
+}
+mat3 getTBNMatrix() {
+	vec3 n = normalize(v_normal);
+	//vec3 t = normalize(v_tangent - dot(v_tangent, n) * n);
+	vec3 t= normalize(v_tangent);
+	vec3 b = normalize(cross(n, t));
+	return mat3(t, b, n);
+}
+
+//normala crossprodukt tangetna, dostanu bitangentu
+//tbn * normala z textury
 void main( void ) {
-	// TODO - get those data from files
 	vec3 rma = getRMA();
+	// blue  = ambient occlusion = b
+	// red = metalicity = r
+	// green = roughness = g
 	float metalicity = rma.r;
-	float reflectivity = rma.g;
-	float alpha = rma.b; // <0,1> where 0 = mirror, 1 = dim == sqrt(roughness)
+	float ambient_occ = rma.b;
+	float roughness = rma.g;
+	float alpha = pow(roughness,2); // <0,1> where 0 = mirror, 1 = dim
 	vec3 albedo = getAlbedo(); // gray 
-	vec3 normalBumps = getNomalBumps();
+	vec3 normalBumps = getTBNMatrix()  * getNomalBumps();
 	
 	/* NORMAL shader */
-	//vec3 normal_shade  = getNormalShade(v_normal);
+	vec3 normal_shade  = getNormalShade(unified_normal_ws);
 
 	/* PBR shader */
-	float ct_o = dot(unified_normal_ws, omega_o_es);
+	float ct_o = dot(unified_normal_ws, omega_o_ws);
 	float k_s = Fresnell(ct_o, 1.0f, 4.0); // 4.0 = IOR
 	float k_d = (1 - k_s) * (1 - metalicity);
 
@@ -106,8 +117,8 @@ void main( void ) {
 	vec3 Lr = getPrefEnv(alpha);
 
 	vec3 color =  k_d*Ld + (k_s*sb.x + sb.y) * Lr;
-	
-	FragColor = vec4( albedo.xyz, 1.0f );// krat getShadow( 0.001f, 10);
+	FragColor = vec4(color * normalBumps ,1.0f);
+	//FragColor = vec4(color.rgb, 1.0f ) * ambient_occ; krat getShadow( 0.001f, 10);
 }
 /*
 float getShadow(float bias, const int r) {

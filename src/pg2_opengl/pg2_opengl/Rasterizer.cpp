@@ -153,8 +153,8 @@ int Rasterizer::initBuffersAndTextures()
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, vertex_stride, (void*)(offsetof(Vertex3, tangent)));
 	glEnableVertexAttribArray(2);
 
-	// LAYOUT 3 == TEXTURE vec2
-	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, vertex_stride, (void*)(offsetof(Vertex3, position)));
+	// LAYOUT 3 == TEXTURE COORD vec2
+	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, vertex_stride, (void*)(offsetof(Vertex3, texture_coord)));
 	glEnableVertexAttribArray(3);
 
 	// LAYOUT 4 == MATERIAL INDEX
@@ -257,8 +257,8 @@ int Rasterizer::mainLoop()
 		Matrix4x4 MVP = this->camera_.getMatrixMVP();
 		SetMatrix4x4(this->shader_program_, MVP.data(), "MVP");
 
-		Matrix4x4 MVn = this->camera_.getMatrixMVn();
-		SetMatrix4x4(this->shader_program_, MVn.data(), "MVn");
+		Matrix4x4 Mn = this->camera_.getMatrixMn();
+		SetMatrix4x4(this->shader_program_, Mn.data(), "MVn");
 
 		Matrix4x4 MV = this->camera_.getMatrixMV();
 		SetMatrix4x4(this->shader_program_, MV.data(), "MV");
