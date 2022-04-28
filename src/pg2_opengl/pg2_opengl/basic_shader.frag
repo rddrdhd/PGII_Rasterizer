@@ -53,8 +53,7 @@ vec3 getIrradiance(vec3 normal) {
 	return tex_color ; 
 }
 
-vec3 getPrefEnv(float alpha, vec3 normal) {
-	float roughness = alpha * alpha;
+vec3 getPrefEnv(float roughness, vec3 normal) {
 	const float maxLevel = 6;
 	
 	vec3 omega_i_ws = reflect( -omega_o_ws ,  normalize(normal));
@@ -118,10 +117,10 @@ void main( void ) {
 
 	vec3 sb = getIntegration(alpha, cosinus_theta_o);
 	vec3 Ld = albedo * getIrradiance(bumped_normal); 
-	vec3 Lr = getPrefEnv(0, bumped_normal);
+	vec3 Lr = getPrefEnv(roughness, bumped_normal);
 
 	vec3 color =  k_d*Ld + (k_s*sb.x + sb.y) * Lr;
-	vec3 mapped_color = tonemapping(color, 2.2f, 1.5f);
+	vec3 mapped_color = tonemapping(color, 1.5f, 2.2f);
 	FragColor = vec4( mapped_color.xyz,1.0f) * ambient_occlusion;
 }
 /*
