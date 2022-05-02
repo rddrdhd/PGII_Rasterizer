@@ -24,6 +24,7 @@ private:
 	double yaw_, pitch_;
 
 	Vector2 last_mouse_pos_;
+	Vector2 last_mouse_scroll_;
 
 public:
 
@@ -64,6 +65,8 @@ public:
 
 	Vector2 getLastMousePos() { return this->last_mouse_pos_; };
 	void setLastMousePos(Vector2 position) { this->last_mouse_pos_ = position; };
+	Vector2 getLastScrollPos() { return this->last_mouse_scroll_; };
+	void setLastScrollPos(Vector2 position) { this->last_mouse_scroll_ = position; };
 
 	void setPosition(Vector3 position) { this->view_from_ = position; };
 	Vector3 getPosition() { return this->view_from_; };

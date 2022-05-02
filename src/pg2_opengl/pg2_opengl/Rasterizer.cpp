@@ -318,7 +318,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	Camera& camera = reinterpret_cast<Rasterizer*>(glfwGetWindowUserPointer(window))->getCamera();
 	auto last_pos = camera.getLastMousePos();
 
-	camera.setLastMousePos(Vector2(last_pos.x, yoffset));
+	camera.setLastScrollPos(Vector2(xoffset, yoffset));
 
 	float ymove = (last_pos.y + float(yoffset));
 	if (ymove < 0) {
@@ -328,11 +328,12 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 		camera.zoomIn();
 	}
 }
+
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 	Camera& camera = reinterpret_cast<Rasterizer*>(glfwGetWindowUserPointer(window))->getCamera();
 	auto last_pos = camera.getLastMousePos();
 
-	camera.setLastMousePos(Vector2(xpos, last_pos.y));
+	camera.setLastMousePos(Vector2(xpos, ypos));
 	float xmove, ymove;
 	xmove = (last_pos.x + float(xpos));
 
