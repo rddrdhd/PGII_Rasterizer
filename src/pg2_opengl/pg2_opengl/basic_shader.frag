@@ -93,7 +93,8 @@ vec3 getPBRShader(){
 	float metalic = rma.g;
 	float roughness = rma.r;
 	float alpha = pow(roughness, 2);
-	vec3 local_normal = getTBNMatrix() * (2*getLocalNormal() - vec3(1.0f));
+	/*vec3 local_normal = getTBNMatrix() * (2*getLocalNormal() - vec3(1.0f));*/
+	vec3 local_normal = getTBNMatrix() * normalize( vec3(getLocalNormal().bgr)*(2.0f - vec3( 1.0f )));
 
 	if (dot(local_normal, omega_o_ws) < 0.0f) {
 		local_normal *= -1.0f;
@@ -106,25 +107,30 @@ vec3 getPBRShader(){
 	float Fd = (1 - Fo) * (1 - metalic);
 	vec3 sb = getIntegration(cosinus_theta_o,roughness);
 
-	vec3 Ld = Fd*albedo * getIrradiance(local_normal); 
+	vec3 Ld = Fd * albedo * getIrradiance(local_normal); 
 	vec3 Lr = getPrefEnv(roughness, local_normal);
 
 	vec3 color =  Ld + (Fo*sb.x + sb.y) * Lr;
+	
 	vec3 toned_color = tonemapping(color, 1.5f, 2.2f);
 	vec3 final_color = toned_color.xyz * ambient_occlusion;
-
 	return final_color;
 }
 
 
 void main( void ) {
-
+	vec3 color;
 	
-	//vec3 final_color = normalToColorSpace(unified_normal_ws);
-	vec3 final_color = getPBRShader();
-
-
-	FragColor = vec4(final_color, 1.0f);
+	//vec3 color = normalToColorSpace(unified_normal_ws);
+	
+	
+	//vec3 n_ls = 2*getLocalNormal() - vec3(1);
+	//vec3 n_ls =  normalize( vec3(getLocalNormal().bgr)*(2.0f - vec3( 1.0f )));
+	//vec3 local_normal =  getTBNMatrix() * n_ls;
+	//color = getPrefEnv(0,local_normal); 
+	
+	color = getPBRShader(); 
+	FragColor = vec4(color, 1.0f);
 
 }
 

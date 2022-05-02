@@ -133,27 +133,28 @@ Vector3 Camera::getViewDir() {
 	return result;
 } 
 
-const float cameraSpeed = 0.1f; // idk
+const float mouseSlower = 0.05f; // idk
+const float mouseFaster = 5.0f; // idk
 
-void Camera::moveForward() {
-	
-	this->view_from_ -= view_from_ * cameraSpeed;
+
+void Camera::zoomIn() {
+	this->view_from_ -= view_from_ * mouseSlower;
 }
 
-void Camera::moveBackward() {
-	this->view_from_ += view_from_ * cameraSpeed;
+void Camera::zoomOut() {
+	this->view_from_ += view_from_ * mouseSlower;
 }
 
-void Camera::moveLeft() {
+void Camera::rotateAroundLeft() {
 	auto moveDir = view_from_.CrossProduct(up_);
 	moveDir.Normalize();
-	this->view_from_ +=  moveDir * velocity_;
+	this->view_from_ +=  moveDir * mouseFaster;
 }
 
-void Camera::moveRight() {
-	auto moveDir = view_from_.CrossProduct(up_);
+void Camera::rotateAroundRight() {
+	auto moveDir = view_from_.CrossProduct(up_ );
 	moveDir.Normalize();
-	this->view_from_ -= moveDir * velocity_;
+	this->view_from_ -= moveDir * mouseFaster;
 	
 }
 void Camera::moveCameraAngle(double pitch, double yaw) {
@@ -164,7 +165,7 @@ void Camera::moveCameraAngle(double pitch, double yaw) {
 	this->setYaw(yaw);
 	this->setPitch(pitch);
 
-	Vector3 new_view_dir = Rz(this->yaw_) * Rx(this->pitch_) * Vector3(0, 1, 0);
+	Vector3 new_view_dir = Rz(this->yaw_) * Rx(this->pitch_) * up_;
 	//Vector3 old_view_dir = this->view_from_ - this->view_at_;//- this->getViewDir();
 	new_view_dir.Normalize();
 	//this->view_at_ = Vector3{ -sin(y) * cos(p), -sin(p), -cos(y)*cos(p) };

@@ -305,28 +305,36 @@ int Rasterizer::mainLoop()
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
 		Camera& camera = reinterpret_cast<Rasterizer*>(glfwGetWindowUserPointer(window))->getCamera();
-		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)camera.moveLeft();
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)camera.moveRight();
-		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)camera.moveForward();
-		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)camera.moveBackward();
+		//if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)camera.moveLeft();
+		//if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)camera.moveRight();
+		//if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)camera.moveForward();
+		//if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)camera.moveBack();
 	}
 }
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
-	// TODO
-	//printf("x:%f y:%f\n", xpos, ypos);
 	Camera& camera = reinterpret_cast<Rasterizer*>(glfwGetWindowUserPointer(window))->getCamera();
-	/*auto last_pos = camera.getLastMousePos();
+	auto last_pos = camera.getLastMousePos();
 	float xmove, ymove;
-	xmove = (last_pos.x - float(xpos));
-	ymove = (last_pos.y - float(ypos));
-	camera.adjustPitchAndYaw(ymove, xmove);
-	camera.setLastMousePos(Vector2(xpos, ypos));*/
+	xmove = (last_pos.x + float(xpos));
+	ymove = (last_pos.y + float(ypos));
 
-	float rotX = ((float)((xpos - camera.getWidth() / 2)) / camera.getWidth());
-	float rotZ = ((float)((ypos - camera.getHeight() / 2)) / camera.getHeight());
-	printf("rx:%f rz:%f\n", rotX, rotZ);
+	camera.setLastMousePos(Vector2(xpos, ypos));
+	if (xmove < 0) {
+		camera.rotateAroundLeft();
+	} else if (xmove > 0) {
+		camera.rotateAroundRight();
+	}
 
+	if (ymove > 0) {
+		camera.zoomOut();
+	} else if (ymove < 0) {
+		camera.zoomIn();
+	}
+	
+
+	//float rotX = ((float)((xpos - camera.getWidth() / 2)) / camera.getWidth());
+	//float rotZ = ((float)((ypos - camera.getHeight() / 2)) / camera.getHeight());
 	//camera.moveCameraAngle(-rotX, -rotZ);
 
 	glfwSetCursorPos(window, 0, 0);

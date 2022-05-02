@@ -49,10 +49,10 @@ public:
 
 	void setVelocity(float velocity) { this->velocity_ = velocity; }
 
-	void moveForward();
-	void moveBackward();
-	void moveLeft();
-	void moveRight();
+	void zoomIn();
+	void zoomOut();
+	void rotateAroundLeft();
+	void rotateAroundRight();
 
 	void moveCameraAngle(double pitch, double yaw);
 	void setYaw(double x);
