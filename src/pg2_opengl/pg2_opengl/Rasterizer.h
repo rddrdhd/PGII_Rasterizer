@@ -13,6 +13,7 @@ void GLAPIENTRY gl_callback_1(GLenum source, GLenum type, GLuint id, GLenum seve
 void framebuffer_resize_callback_1(GLFWwindow* window, int width, int height);
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 
 

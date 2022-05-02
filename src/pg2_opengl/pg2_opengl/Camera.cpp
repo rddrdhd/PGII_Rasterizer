@@ -165,7 +165,9 @@ void Camera::moveCameraAngle(double pitch, double yaw) {
 	this->setYaw(yaw);
 	this->setPitch(pitch);
 
-	Vector3 new_view_dir = Rz(this->yaw_) * Rx(this->pitch_) * up_;
+	auto zeroRotVec = Vector3(0, 1, 0);
+
+	Vector3 new_view_dir = Rz(yaw) * Rx(pitch) * zeroRotVec;
 	//Vector3 old_view_dir = this->view_from_ - this->view_at_;//- this->getViewDir();
 	new_view_dir.Normalize();
 	//this->view_at_ = Vector3{ -sin(y) * cos(p), -sin(p), -cos(y)*cos(p) };

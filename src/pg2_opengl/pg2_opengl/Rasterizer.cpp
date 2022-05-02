@@ -36,6 +36,7 @@ int Rasterizer::initOpenGL() {
 	glfwSetWindowUserPointer(this->window_, reinterpret_cast<void*>(this));
 	glfwSetKeyCallback(this->window_, key_callback);
 	glfwSetCursorPosCallback(this->window_, cursor_position_callback);
+	glfwSetScrollCallback(this->window_, scroll_callback);
 
 	glfwSetInputMode(this->window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -311,31 +312,42 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		//if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)camera.moveBack();
 	}
 }
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
 
+	Camera& camera = reinterpret_cast<Rasterizer*>(glfwGetWindowUserPointer(window))->getCamera();
+	auto last_pos = camera.getLastMousePos();
+
+	camera.setLastMousePos(Vector2(last_pos.x, yoffset));
+
+	float ymove = (last_pos.y + float(yoffset));
+	if (ymove < 0) {
+		camera.zoomOut();
+	}
+	else if (ymove > 0) {
+		camera.zoomIn();
+	}
+}
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 	Camera& camera = reinterpret_cast<Rasterizer*>(glfwGetWindowUserPointer(window))->getCamera();
 	auto last_pos = camera.getLastMousePos();
+
+	camera.setLastMousePos(Vector2(xpos, last_pos.y));
 	float xmove, ymove;
 	xmove = (last_pos.x + float(xpos));
-	ymove = (last_pos.y + float(ypos));
 
-	camera.setLastMousePos(Vector2(xpos, ypos));
 	if (xmove < 0) {
 		camera.rotateAroundLeft();
 	} else if (xmove > 0) {
 		camera.rotateAroundRight();
 	}
-
-	if (ymove > 0) {
-		camera.zoomOut();
-	} else if (ymove < 0) {
-		camera.zoomIn();
-	}
+	/**/
+	
 	
 
-	//float rotX = ((float)((xpos - camera.getWidth() / 2)) / camera.getWidth());
-	//float rotZ = ((float)((ypos - camera.getHeight() / 2)) / camera.getHeight());
-	//camera.moveCameraAngle(-rotX, -rotZ);
+	/*float rotX = ((float)((xpos - camera.getWidth() / 2)) / camera.getWidth());
+	float rotZ = ((float)((ypos - camera.getHeight() / 2)) / camera.getHeight());
+	camera.moveCameraAngle(-rotX, -rotZ);*/
 
 	glfwSetCursorPos(window, 0, 0);
 }
