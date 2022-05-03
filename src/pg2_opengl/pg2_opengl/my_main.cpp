@@ -43,7 +43,8 @@ int run() {
 	}
 	else if (option == 3) {
 		auto g = new MapGenerator();;
-		g->getIrradianceMap(512, 256, "../../../data/maps/lebombo_prefiltered_env_map/0.exr").Save("../../../data/maps/generated_irradiance.exr");
+		//g->getIrradianceMap(512, 256, "../../../data/maps/lebombo_prefiltered_env_map/0.exr").Save("../../../data/maps/generated_irradiance.exr");
+		g->getPrefilteredEnvMap(1.0f, 512, 256, "../../../data/maps/lebombo_prefiltered_env_map/0.exr").Save("../../../data/maps/generated_prefenv_0.exr");
 	}
 
 	return 0;

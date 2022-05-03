@@ -15,6 +15,7 @@ static std::pair<float, float> getSphericalCoords(Vector3 vector) {
 	return std::pair<float, float>(phi, theta);
 }
 
+
 Texture3f MapGenerator::getIrradianceMap(int width, int height, std::string background_filepath)
 {
 	Texture3f result(width, height);
@@ -45,6 +46,63 @@ Texture3f MapGenerator::getIrradianceMap(int width, int height, std::string back
 	return result;
 }
 
+
+
+Vector3 getReflectedVector(Vector3 d, Vector3 n) {
+	d.Normalize();
+	n.Normalize();
+	Vector3 vec = d - 2 * (d.DotProduct(n)) * n;
+	return vec;
+}
+
+Vector3 getGGXOmega_i(float alpha, Vector3 n, Vector3 omega_o) {	//omega_o -> eye direction
+	auto omega_h = getGGXOmega_h(alpha, n);							//omega_h ->
+	return getReflectedVector(omega_o * -1, omega_h);
+}
+
+Vector3 getGGXOmega_h(float alpha, Vector3 n) {
+	float xi_1 = rng();
+	float xi_2 = rng();
+
+	float phi_n = 2 * float(M_PI) * xi_1;
+	float theta_n = atan(alpha * sqrt(xi_2 / (1 - xi_2)));
+
+	Vector3 omega_h(phi_n, theta_n);
+
+	return rotateVector(omega_h, n);
+}
+
+Texture3f MapGenerator::getPrefilteredEnvMap(float alpha, int width, int height, std::string background_filepath) {
+	Texture3f result(width, height);
+	Texture3f background = Texture3f(background_filepath);
+
+	for (int x = 0; x < result.width(); x++) {
+		float phi = float(x) * 2.0f * float(M_PI) / float(result.width());
+
+		for (int y = 0; y < result.height(); y++) {
+			float theta = float(y) * M_PI / float(result.height());
+
+			Vector3 normal(phi, theta);
+
+			int N = 100;
+			Color3f sampleSum({ 0,0,0 });
+			for (int i = 0; i < N; i++) {
+				auto sph_omega_i = getSphericalCoords(getGGXOmega_i(alpha, normal, normal));
+				float u = sph_omega_i.first / (2 * M_PI);
+				float v = sph_omega_i.second / M_PI;
+
+				sampleSum += background.texel(u, v);
+			}
+			sampleSum *= 1 / float(N);
+			auto tmp = Color3f::toSRGB(sampleSum);
+			result.data()[size_t(x) + size_t(y) * size_t(result.width())] = tmp;
+
+		}
+	}
+
+
+	return result;
+}
 
 Vector3 getCosWeightedSample(Vector3 omega_r) {
 	float xi_1 = rng();
