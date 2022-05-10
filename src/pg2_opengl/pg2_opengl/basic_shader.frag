@@ -13,8 +13,9 @@ layout ( location = 0 ) out vec4 FragColor;
 
 mat3x3 TBN;
 in vec3 omega_o_es;
-in vec3 omega_o_ws;
+in vec4 hit_es; // spocitat si omega_o_ws tady znova
 in vec2 tex_coord;
+in vec3 cam_pos;
 flat in int mat_index;
 
 // uniforms
@@ -50,6 +51,7 @@ vec3 getIrradiance(vec3 normal) {
 
 vec3 getPrefEnv(float roughness, vec3 normal) {
 	const float maxLevel = 6;
+	vec3 omega_o_ws = - normalize( cam_pos.xyz - hit_es.xyz / hit_es.w );
 	vec3 omega_i_ws = reflect( omega_o_ws ,  normalize(normal));
 	return textureLod(prefilteredEnv_map, c2s(omega_i_ws), roughness * maxLevel).rgb;
 }
@@ -88,14 +90,13 @@ vec3 tonemapping(vec3 color, float gamma , float exposure){
 
 vec3 getPBRShader(){
 	vec3 rma = getRMA();
-	vec3 albedo = getAlbedo();  
+	vec3 albedo = getAlbedo();
 	float ambient_occlusion = rma.b;
 	float metalic = rma.g;
 	float roughness = rma.r;
 	float alpha = pow(roughness, 2);
-	/*vec3 local_normal = getTBNMatrix() * (2*getLocalNormal() - vec3(1.0f));*/
-	vec3 local_normal = getTBNMatrix() * normalize( vec3(getLocalNormal().bgr)*(2.0f - vec3( 1.0f )));
-
+	vec3 local_normal = getTBNMatrix() * normalize( vec3(getLocalNormal().bgr)*(2.0f - vec3( 1.0f )) );
+	vec3 omega_o_ws = - normalize( cam_pos.xyz - hit_es.xyz / hit_es.w );
 	if (dot(local_normal, omega_o_ws) < 0.0f) {
 		local_normal *= -1.0f;
 	}
@@ -105,12 +106,12 @@ vec3 getPBRShader(){
 
 	float Fo = Fresnell(cosinus_theta_o, 1.0f, 4.0); // 4.0 = IOR
 	float Fd = (1 - Fo) * (1 - metalic);
-	vec3 sb = getIntegration(cosinus_theta_o,roughness);
+	vec3 sb = getIntegration(cosinus_theta_o, roughness);
 
 	vec3 Ld = Fd * albedo * getIrradiance(local_normal); 
 	vec3 Lr = getPrefEnv(roughness, local_normal);
 
-	vec3 color =  Ld + (Fo*sb.x + sb.y) * Lr;
+	vec3 color = Ld + (Fo*sb.x + sb.y) * Lr;
 	
 	vec3 toned_color = tonemapping(color, 1.5f, 2.2f);
 	vec3 final_color = toned_color.xyz * ambient_occlusion;
@@ -121,35 +122,15 @@ vec3 getPBRShader(){
 void main( void ) {
 	vec3 color;
 	
-	//vec3 color = normalToColorSpace(unified_normal_ws);
-	
-	
-	//vec3 n_ls = 2*getLocalNormal() - vec3(1);
-	//vec3 n_ls =  normalize( vec3(getLocalNormal().bgr)*(2.0f - vec3( 1.0f )));
-	//vec3 local_normal =  getTBNMatrix() * n_ls;
-	//color = getPrefEnv(0,local_normal); 
-	
+	//color = normalToColorSpace(unified_normal_ws);
+
+	//vec3 local_normal = getTBNMatrix() * normalize( vec3(getLocalNormal().bgr)*(2.0f - vec3( 1.0f )));
+	//color = getPrefEnv(0.1, local_normal);
+	//color = getPrefEnv(0.1, unified_normal_ws);
+
 	color = getPBRShader(); 
+
 	FragColor = vec4(color, 1.0f);
 
 }
-
-/*
-float getShadow(float bias, const int r) {
-	vec2 shadow_texel_size = 1.0f / textureSize(shadow_map, 0);
-	float shadow = 0.0f;
-
-	for (int y = -r; y <= r; ++y) {
-		for (int x = -r; x <= r; ++x) {
-			vec2 a_tc = (position_lcs.xy + vec2(1.0f)) * 0.5f;
-			a_tc += vec2(x, y) * shadow_texel_size;
-			float depth = texture(shadow_map, a_tc).r * 2.0f - 1.0f;
-			shadow += (depth + bias >= position_lcs.z) ? 1.0f : 0.25f;
-		}
-	}
-	shadow *= 1.0f / ((2 * r + 1) * (2 * r + 1));
-
-	return shadow;
-}*/
-	//vec3 n_ls = normalize((2*normalBumps)-vec3(1.0f)); // slide 73
 	

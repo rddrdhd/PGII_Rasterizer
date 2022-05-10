@@ -23,9 +23,10 @@ uniform vec3 camera_pos;
 out vec3 v_normal;
 out vec3 v_tangent;
 out vec3 unified_normal_ws;
+out vec3 cam_pos;
 //out vec3 position_lcs;
 out vec3 omega_o_es;
-out vec3 omega_o_ws;
+out vec4 hit_es;
 out vec3 reflected_normal_ws;
 out vec2 tex_coord;
 
@@ -41,9 +42,9 @@ void main( void )
 	vec4 tmp = MVn * vec4( v_normal.xyz, 1.0f ); 
 	unified_normal_ws = normalize( tmp.xyz / tmp.w );
 
-	vec4 hit_es = M * in_position;
+	hit_es = M * in_position;
 	vec3 omega_i_ws = normalize( camera_pos.xyz - hit_es.xyz / hit_es.w );
-	omega_o_ws = -omega_i_ws;
+	
 
 	if (dot(unified_normal_ws, omega_i_ws) < 0.0f) {
 		unified_normal_ws *= -1.0f;
@@ -51,6 +52,7 @@ void main( void )
 
 	tex_coord = vec2(in_texcoord.x, 1.0f - in_texcoord.y);
 	mat_index = in_material_index;
+	cam_pos = camera_pos;
 
 	//SHADOW
 	//vec4 tmp3 = MLP * vec4( in_position.xyz, 1.0f );
