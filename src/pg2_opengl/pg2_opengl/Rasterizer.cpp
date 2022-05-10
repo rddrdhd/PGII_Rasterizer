@@ -82,13 +82,21 @@ int Rasterizer::loadMesh(const std::string& file_name)
 	
 	initMaterials();
 	
-	/* //ONLY FOR ONE MATERIAL:
+	 
 	if (file_name == "../../../data/cube/piece_02.obj") {
+		//ONLY FOR ONE MATERIAL:
 		this->initRMATexture("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
 		this->initNormalTexture("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
 		this->initAlbedoTexture("D:/School/PGII/project/pg2/data/cube/scuffed-plastic6-alb.png");
+
+		auto diff_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
+		this->materials_["white_plastic"]->set_texture(Map::kDiffuse, diff_tex);
+		auto rma_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic6-alb.png");
+		this->materials_["white_plastic"]->set_texture(Map::kRMA, rma_tex);
+		auto nor_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
+		this->materials_["white_plastic"]->set_texture(Map::kNormal, nor_tex);
 	}
-	*/
+	
 
 	// for each surface
 	for (SceneGraph::iterator iter = this->scene_.begin(); iter != this->scene_.end(); ++iter)
@@ -543,8 +551,7 @@ int Rasterizer::setIntegrationMap()
 
 /* TEXTURE 4 */
 void Rasterizer::initRMATexture(const std::string& file_name) {
-	//auto rma_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
-//	this->materials_["white_plastic"]->set_texture(Map::kRMA, rma_tex);
+
 
 	Texture3u rma_map = Texture3u(file_name);
 
