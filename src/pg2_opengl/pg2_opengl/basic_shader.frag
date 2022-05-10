@@ -7,13 +7,13 @@
 in vec3 v_normal;
 in vec3 v_tangent;
 in vec3 unified_normal_ws;
+in vec3 unified_position_ws;
 //in vec3 position_lcs;
 
 layout ( location = 0 ) out vec4 FragColor;
 
 mat3x3 TBN;
 in vec3 omega_o_es;
-in vec4 hit_es; // spocitat si omega_o_ws tady znova
 in vec2 tex_coord;
 in vec3 cam_pos;
 flat in int mat_index;
@@ -26,6 +26,20 @@ uniform sampler2D integration_map;
 uniform sampler2D rma_map; 
 uniform sampler2D normal_map; 
 uniform sampler2D albedo_map;
+
+struct Material
+{
+	vec3 diffuse; // (1,1,1) or albedo
+	uvec2 tex_diffuse; // albedo texture
+	vec3 rma; // (1,1,1) or (roughness, metalness, 1)
+	uvec2 tex_rma; // rma texture
+	vec3 normal; // (1,1,1) or (0,0,1)
+	uvec2 tex_normal; // bump texture
+};
+
+layout ( std430, binding = 0 ) readonly buffer Materials{
+	Material materials[];
+};
 
 vec3 normalToColorSpace(vec3 normal){ return (normal + vec3(1,1,1)) / 2;}
 
@@ -51,7 +65,7 @@ vec3 getIrradiance(vec3 normal) {
 
 vec3 getPrefEnv(float roughness, vec3 normal) {
 	const float maxLevel = 6;
-	vec3 omega_o_ws = - normalize( cam_pos.xyz - hit_es.xyz / hit_es.w );
+	vec3 omega_o_ws = - normalize( cam_pos.xyz - unified_position_ws );
 	vec3 omega_i_ws = reflect( omega_o_ws ,  normalize(normal));
 	return textureLod(prefilteredEnv_map, c2s(omega_i_ws), roughness * maxLevel).rgb;
 }
@@ -89,14 +103,19 @@ vec3 tonemapping(vec3 color, float gamma , float exposure){
 }
 
 vec3 getPBRShader(){
-	vec3 rma = getRMA();
-	vec3 albedo = getAlbedo();
+// Bindless textures - bt
+	vec3 albedo_bt = materials[mat_index].diffuse * texture(sampler2D(materials[mat_index].tex_diffuse), tex_coord).rgb;
+	vec3 rma_bt = materials[mat_index].rma * texture(sampler2D(materials[mat_index].tex_rma), tex_coord).rgb;
+	vec3 normal_map_bt = materials[mat_index].normal * texture(sampler2D(materials[mat_index].tex_normal), tex_coord).rgb;
+
+	vec3 rma = rma_bt;//getRMA();
+	vec3 albedo = albedo_bt;//getAlbedo();
 	float ambient_occlusion = rma.b;
 	float metalic = rma.g;
 	float roughness = rma.r;
 	float alpha = pow(roughness, 2);
-	vec3 local_normal = getTBNMatrix() * normalize( vec3(getLocalNormal().bgr)*(2.0f - vec3( 1.0f )) );
-	vec3 omega_o_ws = - normalize( cam_pos.xyz - hit_es.xyz / hit_es.w );
+	vec3 local_normal = normal_map_bt;//getTBNMatrix() * normalize( vec3(getLocalNormal().bgr)*(2.0f - vec3( 1.0f )) );
+	vec3 omega_o_ws = - normalize( cam_pos.xyz - unified_position_ws );
 	if (dot(local_normal, omega_o_ws) < 0.0f) {
 		local_normal *= -1.0f;
 	}

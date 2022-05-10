@@ -2,6 +2,7 @@
 #include "Rasterizer.h"
 #include "utils.h"
 #include "glutils.h"
+#include "material.h"
 
 /* constructor */
 Rasterizer::Rasterizer(int width, int height, float fovY, Vector3 viewFrom, Vector3 viewAt, float farPlane, float nearPlane) {
@@ -221,6 +222,54 @@ int Rasterizer::initShaders(const std::string& vert_path, const std::string& fra
 
 	glUseProgram(this->shader_program_);
 
+	return 0;
+}
+
+int Rasterizer::initMaterials()
+{
+	for (const auto material : materials_) {
+		GLMaterial m;
+		// DIFUSE
+		auto tex_diffuse = material.second->texture(Map::kDiffuse);
+		if (tex_diffuse) {
+			GLuint id = 0;
+			CreateBindlessTexture(id, m.tex_diffuse_handle, tex_diffuse->width(), tex_diffuse->height(), tex_diffuse->data());
+			m.albedo = Color3f({ 1, 1, 1 });
+		} else {
+			GLuint id = 0;
+			GLubyte data[] = { 255, 255, 255, 255 }; // opaque white
+			CreateBindlessTexture(id, m.tex_diffuse_handle, 1, 1, data);
+			m.albedo = material.second->albedo();
+		}
+
+		// ROUGHNESS, METALNESS
+		auto tex_rma = material.second->texture(Map::kRoughness);
+		if (tex_rma) {
+			GLuint id = 0;
+			CreateBindlessTexture(id, m.tex_rma_handle, tex_rma->width(), tex_rma->height(), tex_rma->data());
+			m.rma = Color3f({ 1, 1, 1 });
+		}
+		else {
+			GLuint id = 0;
+			GLubyte data[] = { 255, 255, 255, 255 }; // opaque white
+			CreateBindlessTexture(id, m.tex_rma_handle, 1, 1, data);
+			m.rma = Color3f({ material.second->roughness(), material.second->metallic(), 1.0f });
+		}
+
+		// NORMAL MAP
+		auto tex_norm = material.second->texture(Map::kNormal);
+		if (tex_norm) {
+			GLuint id = 0;
+			CreateBindlessTexture(id, m.tex_normal_handle, tex_norm->width(), tex_norm->height(), tex_norm->data());
+			m.normal = Color3f({ 1, 1, 1 });
+		}
+		else {
+			GLuint id = 0;
+			GLubyte data[] = { 255, 255, 255, 255 }; // opaque white
+			CreateBindlessTexture(id, m.tex_normal_handle, 1, 1, data);
+			m.normal = Color3f({ 0, 0, 1 });
+		}
+	}
 	return 0;
 }
 

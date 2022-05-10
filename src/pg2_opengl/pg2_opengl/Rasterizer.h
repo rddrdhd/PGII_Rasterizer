@@ -15,7 +15,27 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
+#pragma pack(push, 1)
+struct GLMaterial {
+	// DIFFUSE
+	Color3f albedo;
+	GLbyte pad0[4];
+	GLuint64 tex_diffuse_handle{ 0 };
+	GLbyte pad1[8];
 
+	// ROUGHNESS, METALNESS, ALPHA
+	Color3f rma;	// alpha = 1
+	GLbyte pad2[4];
+	GLuint64 tex_rma_handle{ 0 };
+	GLbyte pad3[8];
+
+	// NORMALS
+	Color3f normal;	// (0,0,1) if bump map is not present
+	GLbyte pad4[4];
+	GLuint64 tex_normal_handle{ 0 };
+	GLbyte pad5[8];
+};
+#pragma
 
 class Rasterizer {
 
@@ -25,6 +45,7 @@ class Rasterizer {
 		int loadMesh(const std::string& file_name); 
 		int initBuffersAndTextures();
 		int initShaders(const std::string& vert_path, const std::string& frag_path);
+		int initMaterials();
 		int mainLoop();
 		std::vector<Vertex3> getVertices() { return this->vertices_; };
 
@@ -36,6 +57,7 @@ class Rasterizer {
 	private:
 		SceneGraph scene_;
 		MaterialLibrary materials_;
+		std::vector<GLMaterial> materials_gl;
 
 		//std::vector<Material*> materials;
 
