@@ -127,67 +127,53 @@ Matrix4x4 Camera::getMatrixMn() {
 	return Mn;
 }
 
-Vector3 Camera::getViewDir() {
-	Vector3 result(this->yaw_, this->pitch_);
-	result.Normalize();
-	return result;
-} 
+void Camera::moveCameraX(bool right) {
+	Vector3 view_dir = (view_at_ - view_from_).CrossProduct(up_);
+	view_dir.Normalize();
+	view_dir *= velocity_;
 
-const float mouseSlower = 0.05f; // idk
-const float mouseFaster = 5.0f; // idk
+	if (!right)
+		view_dir *= -1;
 
-
-void Camera::zoomIn() {
-	this->view_from_ -= view_from_ * mouseSlower;
+	view_from_ += view_dir;
+	view_at_ += view_dir;
 }
+void Camera::moveCameraY(bool forward) {
+	Vector3 view_dir = view_at_ - view_from_;
+	view_dir.Normalize();
+	view_dir *= velocity_;
 
-void Camera::zoomOut() {
-	this->view_from_ += view_from_ * mouseSlower;
-}
+	if (!forward)
+		view_dir *= -1;
 
-void Camera::rotateAroundLeft() {
-	auto moveDir = view_from_.CrossProduct(up_);
-	moveDir.Normalize();
-	this->view_from_ +=  moveDir * mouseFaster;
+	view_from_ += view_dir;
+	view_at_ += view_dir;
 }
+void Camera::moveCameraZ(bool up) {
+	Vector3 view_dir = up_;
+	view_dir.Normalize();
+	view_dir *= velocity_;
 
-void Camera::rotateAroundRight() {
-	auto moveDir = view_from_.CrossProduct(up_ );
-	moveDir.Normalize();
-	this->view_from_ -= moveDir * mouseFaster;
-	
+	if (!up)
+		view_dir *= -1;
+
+	view_from_ += view_dir;
+	view_at_ += view_dir;
 }
-void Camera::moveCameraAngle(double pitch, double yaw) {
-	/*Vector3 new_view_dir = Rz(yaw) * Rx(pitch) * Vector3(0, 1, 0);
+void Camera::moveCameraAngle(double yaw_change, double pitch_change) {
+	Vector3 view_dir = view_at_ - view_from_;
+	view_dir.Normalize();
+
+	auto zero_rotation = Vector3(0, 1, 0);
+	float old_yaw = atan2f(view_dir.y, view_dir.x) - M_PI_2;
+	float old_pitch = acosf(-view_dir.z) - M_PI_2;
+
+	Vector3 new_view_dir = Rz(old_yaw - yaw_change) * Rx(old_pitch - pitch_change) * zero_rotation;
 	new_view_dir.Normalize();
-	this->view_at_ = view_from_ + new_view_dir;*/
 
-	this->setYaw(yaw);
-	this->setPitch(pitch);
-
-	auto zeroRotVec = Vector3(0, 1, 0);
-
-	Vector3 new_view_dir = Rz(yaw) * Rx(pitch) * zeroRotVec;
-	//Vector3 old_view_dir = this->view_from_ - this->view_at_;//- this->getViewDir();
-	new_view_dir.Normalize();
-	//this->view_at_ = Vector3{ -sin(y) * cos(p), -sin(p), -cos(y)*cos(p) };
-	this->view_at_ = this->view_from_ + new_view_dir;
-	//this->view_at_.Normalize();
+	view_at_ = view_from_ + new_view_dir;
 }
 
-void Camera::setYaw(double x) {
-	//printf("%p->", this->yaw_);
-	this->yaw_ += float(x*M_PI );
-	while (this->yaw_ < 0) this->yaw_ += PI2;
-	while (this->yaw_ > (PI2)) this->yaw_ -= PI2;
-	//printf("%p\n", this->yaw_);
-}
-
-void Camera::setPitch(double y) {
-	this->pitch_ += float(y*M_PI );
-	if (this->pitch_ < 0) this->pitch_ = 0.01;
-	if (this->pitch_ > M_PI) this->pitch_ = M_PI - 0.01;
-}
 
 Matrix3x3 Camera::Rx(float alpha) {
 	return Matrix3x3{

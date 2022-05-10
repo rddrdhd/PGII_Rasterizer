@@ -37,6 +37,7 @@ int Rasterizer::initOpenGL() {
 	glfwSetKeyCallback(this->window_, key_callback);
 	glfwSetCursorPosCallback(this->window_, cursor_position_callback);
 	glfwSetScrollCallback(this->window_, scroll_callback);
+	glfwSetCursorPos(this->window_, (this->camera_.getWidth() / 2), (this->camera_.getHeight() / 2));
 
 	glfwSetInputMode(this->window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -306,51 +307,42 @@ int Rasterizer::mainLoop()
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
 		Camera& camera = reinterpret_cast<Rasterizer*>(glfwGetWindowUserPointer(window))->getCamera();
-		//if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)camera.moveLeft();
-		//if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)camera.moveRight();
-		//if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)camera.moveForward();
-		//if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)camera.moveBack();
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)camera.moveLeft();
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)camera.moveRight();
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)camera.moveUp();
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)camera.moveDown();
 	}
 }
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-
 	Camera& camera = reinterpret_cast<Rasterizer*>(glfwGetWindowUserPointer(window))->getCamera();
-	auto last_pos = camera.getLastMousePos();
+	auto last_pos = camera.getLastScrollPos();
 
 	camera.setLastScrollPos(Vector2(xoffset, yoffset));
 
-	float ymove = (last_pos.y + float(yoffset));
+	float ymove = (last_pos.y + float(yoffset)); // vertical scrolling
+	float xmove = (last_pos.x + float(xoffset)); // horizontal scrolling
+
 	if (ymove < 0) {
-		camera.zoomOut();
+		camera.moveCameraY(false); //  zoom out
 	}
 	else if (ymove > 0) {
-		camera.zoomIn();
+		camera.moveCameraY(true); // zoom in
 	}
+	
 }
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 	Camera& camera = reinterpret_cast<Rasterizer*>(glfwGetWindowUserPointer(window))->getCamera();
-	auto last_pos = camera.getLastMousePos();
+	float width = camera.getWidth();
+	float height = camera.getHeight();
 
-	camera.setLastMousePos(Vector2(xpos, ypos));
-	float xmove, ymove;
-	xmove = (last_pos.x + float(xpos));
+	float yaw_change = camera.getVelocity() * (float)(xpos - (width / 2)) / width;
+	float pitch_change = camera.getVelocity() * (float)(ypos - (height / 2)) / height;
 
-	if (xmove < 0) {
-		camera.rotateAroundLeft();
-	} else if (xmove > 0) {
-		camera.rotateAroundRight();
-	}
-	/**/
-	
-	
+	camera.moveCameraAngle(-yaw_change, -pitch_change);
 
-	/*float rotX = ((float)((xpos - camera.getWidth() / 2)) / camera.getWidth());
-	float rotZ = ((float)((ypos - camera.getHeight() / 2)) / camera.getHeight());
-	camera.moveCameraAngle(-rotX, -rotZ);*/
-
-	glfwSetCursorPos(window, 0, 0);
+	glfwSetCursorPos(window, (width / 2), (height / 2));	
 }
 
 /* TEXTURE 0*/
@@ -373,8 +365,6 @@ void Rasterizer::initIrradianceMapTexture(const std::string& file_name)
 		//glGenerateMipmap( GL_TEXTURE_2D );
 	}
 	glBindTexture(GL_TEXTURE_2D, 0);
-
-
 }
 
 /* TEXTURE 0 */
