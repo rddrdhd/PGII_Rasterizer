@@ -340,7 +340,7 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 	float yaw_change = camera.getVelocity() * (float)(xpos - (width / 2)) / width;
 	float pitch_change = camera.getVelocity() * (float)(ypos - (height / 2)) / height;
 
-	camera.moveCameraAngle(-yaw_change, -pitch_change);
+	camera.moveCameraAngle(yaw_change, -pitch_change);
 
 	glfwSetCursorPos(window, (width / 2), (height / 2));	
 }

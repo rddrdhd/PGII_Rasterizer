@@ -27,7 +27,6 @@ out vec3 cam_pos;
 //out vec3 position_lcs;
 out vec3 omega_o_es;
 out vec4 hit_es;
-out vec3 reflected_normal_ws;
 out vec2 tex_coord;
 
 flat out int mat_index;
