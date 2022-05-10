@@ -103,7 +103,7 @@ vec3 tonemapping(vec3 color, float gamma , float exposure){
 }
 
 vec3 getPBRShader(){
-// Bindless textures - bt
+	// BINDLESS TEXTURES
 	vec3 albedo_bt = materials[mat_index].diffuse * texture(sampler2D(materials[mat_index].tex_diffuse), tex_coord).rgb;
 	vec3 rma_bt = materials[mat_index].rma * texture(sampler2D(materials[mat_index].tex_rma), tex_coord).rgb;
 	vec3 normal_map_bt = materials[mat_index].normal * texture(sampler2D(materials[mat_index].tex_normal), tex_coord).rgb;

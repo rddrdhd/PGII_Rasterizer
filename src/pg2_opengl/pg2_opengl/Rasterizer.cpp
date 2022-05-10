@@ -79,12 +79,16 @@ int Rasterizer::initOpenGL() {
 int Rasterizer::loadMesh(const std::string& file_name)
 {
 	LoadOBJ(file_name, this->scene_, this->materials_, false);
-
+	
+	initMaterials();
+	
+	/* //ONLY FOR ONE MATERIAL:
 	if (file_name == "../../../data/cube/piece_02.obj") {
 		this->initRMATexture("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
 		this->initNormalTexture("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
 		this->initAlbedoTexture("D:/School/PGII/project/pg2/data/cube/scuffed-plastic6-alb.png");
 	}
+	*/
 
 	// for each surface
 	for (SceneGraph::iterator iter = this->scene_.begin(); iter != this->scene_.end(); ++iter)
@@ -227,49 +231,64 @@ int Rasterizer::initShaders(const std::string& vert_path, const std::string& fra
 
 int Rasterizer::initMaterials()
 {
+	GLMaterial* gl_materials = new GLMaterial[materials_.size()];
+	int m = 0;
 	for (const auto material : materials_) {
-		GLMaterial m;
+		//GLMaterial m;
 		// DIFUSE
 		auto tex_diffuse = material.second->texture(Map::kDiffuse);
 		if (tex_diffuse) {
 			GLuint id = 0;
-			CreateBindlessTexture(id, m.tex_diffuse_handle, tex_diffuse->width(), tex_diffuse->height(), tex_diffuse->data());
-			m.albedo = Color3f({ 1, 1, 1 });
-		} else {
+			CreateBindlessTexture(id, gl_materials[m].tex_diffuse_handle, tex_diffuse->width(), tex_diffuse->height(), tex_diffuse->data());
+			gl_materials[m].albedo = Color3f({ 1.0f, 1.0f, 1.0f }); // white diffuse color
+		}
+		else
+		{
 			GLuint id = 0;
 			GLubyte data[] = { 255, 255, 255, 255 }; // opaque white
-			CreateBindlessTexture(id, m.tex_diffuse_handle, 1, 1, data);
-			m.albedo = material.second->albedo();
+			CreateBindlessTexture(id, gl_materials[m].tex_diffuse_handle, 1, 1, data);
+			gl_materials[m].albedo = material.second->value(Map::kDiffuse);
 		}
+
 
 		// ROUGHNESS, METALNESS
 		auto tex_rma = material.second->texture(Map::kRoughness);
 		if (tex_rma) {
 			GLuint id = 0;
-			CreateBindlessTexture(id, m.tex_rma_handle, tex_rma->width(), tex_rma->height(), tex_rma->data());
-			m.rma = Color3f({ 1, 1, 1 });
+			CreateBindlessTexture(id, gl_materials[m].tex_rma_handle, tex_rma->width(), tex_rma->height(), tex_rma->data());
+			gl_materials[m].rma = Color3f({ 1, 1, 1 });
 		}
 		else {
 			GLuint id = 0;
 			GLubyte data[] = { 255, 255, 255, 255 }; // opaque white
-			CreateBindlessTexture(id, m.tex_rma_handle, 1, 1, data);
-			m.rma = Color3f({ material.second->roughness(), material.second->metallic(), 1.0f });
+			CreateBindlessTexture(id, gl_materials[m].tex_rma_handle, 1, 1, data);
+			gl_materials[m].rma = Color3f({ material.second->roughness(), material.second->metallic(), 1.0f });
 		}
 
 		// NORMAL MAP
 		auto tex_norm = material.second->texture(Map::kNormal);
 		if (tex_norm) {
 			GLuint id = 0;
-			CreateBindlessTexture(id, m.tex_normal_handle, tex_norm->width(), tex_norm->height(), tex_norm->data());
-			m.normal = Color3f({ 1, 1, 1 });
+			CreateBindlessTexture(id, gl_materials[m].tex_normal_handle, tex_norm->width(), tex_norm->height(), tex_norm->data());
+			gl_materials[m].normal = Color3f({ 1, 1, 1 });
 		}
 		else {
 			GLuint id = 0;
 			GLubyte data[] = { 255, 255, 255, 255 }; // opaque white
-			CreateBindlessTexture(id, m.tex_normal_handle, 1, 1, data);
-			m.normal = Color3f({ 0, 0, 1 });
+			CreateBindlessTexture(id, gl_materials[m].tex_normal_handle, 1, 1, data);
+			gl_materials[m].normal = Color3f({ 0, 0, 1 });
 		}
+		m++;
 	}
+
+	GLuint ssbo_materials = 0;
+	glGenBuffers(1, &ssbo_materials);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_materials);
+	const GLsizeiptr gl_materials_size = sizeof(GLMaterial) * materials_.size();
+	glBufferData(GL_SHADER_STORAGE_BUFFER, gl_materials_size, gl_materials, GL_STATIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_materials);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
 	return 0;
 }
 
