@@ -259,12 +259,11 @@ int Rasterizer::initMaterials(bool for_cube)
 			GLuint id = 0;
 			CreateBindlessTexture(id, gl_materials[m].tex_rma_handle, tex_rma->width(), tex_rma->height(), tex_rma->data());
 			gl_materials[m].rma = Color3f({ 1, 1, 1 });
-		}
-		else {
+		} else {
 			GLuint id = 0;
 			GLubyte data[] = { 255, 255, 255, 255 }; // opaque white
 			CreateBindlessTexture(id, gl_materials[m].tex_rma_handle, 1, 1, data);
-			gl_materials[m].rma = material.second->value(Map::kRoughness);
+			gl_materials[m].rma = material.second->value(Map::kRMA);
 		}
 
 		// NORMAL MAP
