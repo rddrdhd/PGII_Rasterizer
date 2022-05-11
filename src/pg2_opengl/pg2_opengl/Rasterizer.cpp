@@ -261,7 +261,7 @@ int Rasterizer::initMaterials()
 
 
 		// ROUGHNESS, METALNESS
-		auto tex_rma = material.second->texture(Map::kRoughness);
+		auto tex_rma = material.second->texture(Map::kRMA);
 		if (tex_rma) {
 			GLuint id = 0;
 			CreateBindlessTexture(id, gl_materials[m].tex_rma_handle, tex_rma->width(), tex_rma->height(), tex_rma->data());
@@ -271,7 +271,8 @@ int Rasterizer::initMaterials()
 			GLuint id = 0;
 			GLubyte data[] = { 255, 255, 255, 255 }; // opaque white
 			CreateBindlessTexture(id, gl_materials[m].tex_rma_handle, 1, 1, data);
-			gl_materials[m].rma = Color3f({ material.second->roughness(), material.second->metallic(), 1.0f });
+			gl_materials[m].rma = material.second->value(Map::kRoughness);
+			//gl_materials[m].rma = Color3f({ material.second->roughness_, material.second->metallic_, 1.0f });
 		}
 
 		// NORMAL MAP

@@ -105,13 +105,17 @@ vec3 tonemapping(vec3 color, float gamma , float exposure){
 vec3 getPBRShader(){
 	// BINDLESS TEXTURES
 	
-	vec3 rma = getRMA();
-	vec3 albedo =getAlbedo();
+	vec3 albedo_bt = materials[mat_index].diffuse.rgb * texture( sampler2D( materials[mat_index].tex_diffuse ),tex_coord ).rgb;
+	vec3 rma_bt = materials[mat_index].rma.rgb * texture(sampler2D(materials[mat_index].tex_rma), tex_coord).rgb;
+	vec3 normal_map_bt = materials[mat_index].normal.rgb * texture(sampler2D(materials[mat_index].tex_normal), tex_coord).rgb;
+
+	vec3 rma = rma_bt;//getRMA();
+	vec3 albedo =albedo_bt;//getAlbedo();
 	float ambient_occlusion = rma.b;
 	float metalic = rma.g;
 	float roughness = rma.r;
 	float alpha = pow(roughness, 2);
-	vec3 local_normal = getTBNMatrix() * normalize( vec3(getLocalNormal().bgr)*(2.0f - vec3( 1.0f )) );
+	vec3 local_normal =getTBNMatrix() * normalize( vec3(normal_map_bt)*(2.0f - vec3( 1.0f )) );
 	vec3 omega_o_ws = - normalize( cam_pos.xyz - unified_position_ws );
 	if (dot(local_normal, omega_o_ws) < 0.0f) {
 		local_normal *= -1.0f;
@@ -144,13 +148,8 @@ void main( void ) {
 	//color = getPrefEnv(0.1, local_normal);
 	//color = getPrefEnv(0.1, unified_normal_ws);
 
-	//color = getPBRShader(); 
+	color = getPBRShader(); 
 
-	//TODO - rma does not seem to work right
-	vec3 albedo_bt = materials[mat_index].diffuse.rgb * texture( sampler2D( materials[mat_index].tex_diffuse ),tex_coord ).rgb;
-	vec3 rma_bt = materials[mat_index].rma.rgb * texture(sampler2D(materials[mat_index].tex_rma), tex_coord).bgr;
-	vec3 normal_map_bt = materials[mat_index].normal.rgb * texture(sampler2D(materials[mat_index].tex_normal), tex_coord).rgb;
-	color = rma_bt;
 	FragColor = vec4(color, 1.0f);
 }
 	
