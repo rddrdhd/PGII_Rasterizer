@@ -80,24 +80,8 @@ int Rasterizer::loadMesh(const std::string& file_name)
 {
 	LoadOBJ(file_name, this->scene_, this->materials_, false);
 
-	auto diff_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic6-alb.png");
-	this->materials_["white_plastic"]->set_texture(Map::kDiffuse, diff_tex);
-	auto rma_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
-	this->materials_["white_plastic"]->set_texture(Map::kRMA, rma_tex);
-	auto nor_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
-	this->materials_["white_plastic"]->set_texture(Map::kNormal, nor_tex);
-	
-	initMaterials();
-	
-	 
-	if (false){//file_name == "../../../data/cube/piece_02.obj") {
-		//ONLY FOR ONE MATERIAL:
-		this->initRMATexture("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
-		this->initNormalTexture("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
-		this->initAlbedoTexture("D:/School/PGII/project/pg2/data/cube/scuffed-plastic6-alb.png");
-
-	}
-	
+	bool for_cube = (file_name == "../../../data/cube/piece_02.obj");
+	initMaterials(for_cube);
 
 	// for each surface
 	for (SceneGraph::iterator iter = this->scene_.begin(); iter != this->scene_.end(); ++iter)
@@ -187,10 +171,6 @@ int Rasterizer::initBuffersAndTextures()
 	this->setPrefilteredEnvMap(); // TEXTURE 1
 	this->setIntegrationMap(); // TEXTURE 2
 
-	//this->setRMATexture(); // TEXTURE 4
-	//this->setNormalTexture(); // TEXTURE 5
-	//this->setAlbedoTexture(); // TEXTURE 6
-
 	return 0;
 }
 
@@ -238,8 +218,21 @@ int Rasterizer::initShaders(const std::string& vert_path, const std::string& fra
 	return 0;
 }
 
-int Rasterizer::initMaterials()
+int Rasterizer::initMaterials(bool for_cube)
 {
+	if (for_cube) {
+		/*this->initRMATexture("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
+		this->initNormalTexture("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
+		this->initAlbedoTexture("D:/School/PGII/project/pg2/data/cube/scuffed-plastic6-alb.png");*/
+		auto diff_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic6-alb.png");
+		this->materials_["white_plastic"]->set_texture(Map::kDiffuse, diff_tex);
+		auto rma_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
+		this->materials_["white_plastic"]->set_texture(Map::kRMA, rma_tex);
+		auto nor_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
+		this->materials_["white_plastic"]->set_texture(Map::kNormal, nor_tex);
+	}
+	
+
 	GLMaterial* gl_materials = new GLMaterial[materials_.size()];
 	int m = 0;
 	for (const auto material : materials_) {
@@ -272,7 +265,6 @@ int Rasterizer::initMaterials()
 			GLubyte data[] = { 255, 255, 255, 255 }; // opaque white
 			CreateBindlessTexture(id, gl_materials[m].tex_rma_handle, 1, 1, data);
 			gl_materials[m].rma = material.second->value(Map::kRoughness);
-			//gl_materials[m].rma = Color3f({ material.second->roughness_, material.second->metallic_, 1.0f });
 		}
 
 		// NORMAL MAP
@@ -340,8 +332,8 @@ int Rasterizer::mainLoop()
 		Matrix4x4 Mn = this->camera_.getMatrixMn();
 		SetMatrix4x4(this->shader_program_, Mn.data(), "MVn");
 
-		Matrix4x4 MV = this->camera_.getMatrixMV();
-		SetMatrix4x4(this->shader_program_, MV.data(), "MV");
+		//Matrix4x4 MV = this->camera_.getMatrixMV();
+		//SetMatrix4x4(this->shader_program_, MV.data(), "MV");
 
 		Matrix4x4 M = this->camera_.getMatrixM();
 		SetMatrix4x4(this->shader_program_, M.data(), "M");
@@ -358,9 +350,6 @@ int Rasterizer::mainLoop()
 		setPrefilteredEnvMap();
 		setIntegrationMap();
 		//setShadeMap();
-		setRMATexture();
-		setNormalTexture();
-		setAlbedoTexture();
 
 		glBindVertexArray(this->vao_);
 
@@ -550,108 +539,6 @@ int Rasterizer::setIntegrationMap()
 
 	return S_OK;
 }
-
-/* TEXTURE 4 */
-void Rasterizer::initRMATexture(const std::string& file_name) {
-
-
-	Texture3u rma_map = Texture3u(file_name);
-
-	glGenTextures(1, &this->tex_rma_map_);
-	glBindTexture(GL_TEXTURE_2D, this->tex_rma_map_);
-	if (glIsTexture(this->tex_rma_map_))
-	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		// for HDR images use GL_RGB32F or GL_RGB16F as internal format !!!
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8,
-			rma_map.width(), rma_map.height(), 0,
-			GL_BGR, GL_UNSIGNED_BYTE, rma_map.data());
-	}
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-/* TEXTURE 4 */
-int Rasterizer::setRMATexture() {
-	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_2D, this->tex_rma_map_);
-
-	SetSampler(this->shader_program_, 4, "rma_map");
-
-	return S_OK;
-}
-
-/* TEXTURE 5 */
-void Rasterizer::initNormalTexture(const std::string& file_name) {
-	//auto normal_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
-	//this->materials_["white_plastic"]->set_texture(Map::kNormal, normal_tex);
-
-	Texture3u normal_map = Texture3u(file_name);
-
-	glGenTextures(1, &this->tex_normal_map_);
-	glBindTexture(GL_TEXTURE_2D, this->tex_normal_map_);
-	if (glIsTexture(this->tex_normal_map_))
-	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		// for HDR images use GL_RGB32F or GL_RGB16F as internal format !!!
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8,
-			normal_map.width(), normal_map.height(), 0,
-			GL_BGR, GL_UNSIGNED_BYTE, normal_map.data());
-		//glGenerateMipmap( GL_TEXTURE_2D );
-	}
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-/* TEXTURE 5 */
-int Rasterizer::setNormalTexture() {
-	glActiveTexture(GL_TEXTURE5);
-	glBindTexture(GL_TEXTURE_2D, this->tex_normal_map_);
-
-	SetSampler(this->shader_program_, 5, "normal_map");
-
-	return S_OK;
-}
-
-/* TEXTURE 6 */
-void Rasterizer::initAlbedoTexture(const std::string& file_name) {
-
-	Texture3u albedo_map = Texture3u(file_name);
-
-	glGenTextures(1, &this->tex_albedo_map_);
-	glBindTexture(GL_TEXTURE_2D, this->tex_albedo_map_);
-	if (glIsTexture(this->tex_albedo_map_))
-	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		// for HDR images use GL_RGB32F or GL_RGB16F as internal format !!!
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8,
-			albedo_map.width(), albedo_map.height(), 0,
-			GL_BGR, GL_UNSIGNED_BYTE, albedo_map.data());
-		//glGenerateMipmap( GL_TEXTURE_2D );
-	}
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
- 
-/* TEXTURE 6 */
-int Rasterizer::setAlbedoTexture() {
-	glActiveTexture(GL_TEXTURE6);
-	glBindTexture(GL_TEXTURE_2D, this->tex_albedo_map_);
-
-	SetSampler(this->shader_program_, 6, "albedo_map");
-
-	return S_OK;
-}
-
 
 /* load shader code from the text file */
 int Rasterizer::LoadShader(const std::string& file_name, std::vector<char>& shader)

@@ -46,7 +46,7 @@ class Rasterizer {
 		int loadMesh(const std::string& file_name); 
 		int initBuffersAndTextures();
 		int initShaders(const std::string& vert_path, const std::string& frag_path);
-		int initMaterials();
+		int initMaterials(bool for_cube);
 		int mainLoop();
 		std::vector<Vertex3> getVertices() { return this->vertices_; };
 
@@ -81,18 +81,6 @@ class Rasterizer {
 		void initIntegrationMapTexture(const std::string& file_name);
 		int setIntegrationMap();
 		float far_plane_, near_plane_;
-
-		GLuint tex_rma_map_;
-		void initRMATexture(const std::string& file_name);
-		int setRMATexture();
-
-		GLuint tex_normal_map_;
-		void initNormalTexture(const std::string& file_name);
-		int setNormalTexture();
-
-		GLuint tex_albedo_map_;
-		void initAlbedoTexture(const std::string& file_name);
-		int setAlbedoTexture();
 
 		GLuint vertex_shader_;
 		GLuint fragment_shader_;

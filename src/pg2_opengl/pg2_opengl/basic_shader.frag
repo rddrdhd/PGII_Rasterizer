@@ -12,7 +12,6 @@ in vec3 unified_position_ws;
 
 layout ( location = 0 ) out vec4 FragColor;
 
-mat3x3 TBN;
 in vec3 omega_o_es;
 in vec2 tex_coord;
 in vec3 cam_pos;
@@ -23,9 +22,6 @@ uniform sampler2D irradiance_map;
 uniform sampler2D prefilteredEnv_map;
 uniform sampler2D integration_map;
 //uniform sampler2D shadow_map;
-uniform sampler2D rma_map; 
-uniform sampler2D normal_map; 
-uniform sampler2D albedo_map;
 
 struct Material
 {
@@ -70,22 +66,11 @@ vec3 getPrefEnv(float roughness, vec3 normal) {
 	return textureLod(prefilteredEnv_map, c2s(omega_i_ws), roughness * maxLevel).rgb;
 }
 
-vec3 getLocalNormal() {
-	return texture(normal_map, tex_coord).bgr;
-}
-
-vec3 getAlbedo(){
-	return texture(albedo_map, tex_coord).rgb;
-}
 
 float Fresnell(float ct_o, float n1, float n2 ) {
 	if (ct_o == 0) return 0;
 	float f_0 = pow((n1-n2)/(n1+n2), 2);
 	return f_0 + (1 - f_0) * pow(1 - ct_o, 5);
-}
-
-vec3 getRMA() {
-	return texture(rma_map, tex_coord).rgb;
 }
 
 mat3 getTBNMatrix() {
@@ -109,13 +94,13 @@ vec3 getPBRShader(){
 	vec3 rma_bt = materials[mat_index].rma.rgb * texture(sampler2D(materials[mat_index].tex_rma), tex_coord).rgb;
 	vec3 normal_map_bt = materials[mat_index].normal.rgb * texture(sampler2D(materials[mat_index].tex_normal), tex_coord).rgb;
 
-	vec3 rma = rma_bt;//getRMA();
-	vec3 albedo =albedo_bt;//getAlbedo();
+	vec3 rma = rma_bt;
+	vec3 albedo =albedo_bt;
 	float ambient_occlusion = rma.b;
 	float metalic = rma.g;
 	float roughness = rma.r;
 	float alpha = pow(roughness, 2);
-	vec3 local_normal =getTBNMatrix() * normalize( vec3(normal_map_bt)*(2.0f - vec3( 1.0f )) );
+	vec3 local_normal = getTBNMatrix() * normalize( vec3(normal_map_bt)*(2.0f - vec3( 1.0f )) );
 	vec3 omega_o_ws = - normalize( cam_pos.xyz - unified_position_ws );
 	if (dot(local_normal, omega_o_ws) < 0.0f) {
 		local_normal *= -1.0f;

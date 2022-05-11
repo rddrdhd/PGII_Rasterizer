@@ -12,7 +12,7 @@ layout ( location = 4 ) in int in_material_index;
 
 uniform mat4 MVn;
 uniform mat4 MVP;
-uniform mat4 MV;
+//uniform mat4 MV;
 uniform mat4 M;
 //uniform mat4 MLP;
 
@@ -45,8 +45,6 @@ void main( void )
 	unified_position_ws = hit_es.xyz / hit_es.w;
 	vec3 omega_i_ws = normalize( camera_pos.xyz - unified_position_ws );
 
-	
-
 	if (dot(unified_normal_ws, omega_i_ws) < 0.0f) {
 		unified_normal_ws *= -1.0f;
 	}
@@ -56,6 +54,6 @@ void main( void )
 	cam_pos = camera_pos;
 
 	//SHADOW
-	//vec4 tmp3 = MLP * vec4( in_position.xyz, 1.0f );
-	//position_lcs = tmp3.xyz / tmp3.w;
+	//vec4 tmp2 = MLP * vec4( in_position.xyz, 1.0f );
+	//position_lcs = tmp2.xyz / tmp2.w;
 }
