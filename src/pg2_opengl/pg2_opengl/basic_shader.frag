@@ -61,9 +61,9 @@ vec3 getIrradiance(vec3 normal) {
 
 vec3 getPrefEnv(float roughness, vec3 normal) {
 	const float maxLevel = 6;
-	vec3 omega_o_ws = - normalize( cam_pos.xyz - unified_position_ws );
-	vec3 omega_i_ws = reflect( omega_o_ws ,  normalize(normal));
-	return textureLod(prefilteredEnv_map, c2s(omega_i_ws), roughness * maxLevel).rgb;
+	vec3 omega_o = - normalize( cam_pos.xyz - unified_position_ws );
+	vec3 omega_i = reflect( -omega_o ,  normalize(normal));
+	return textureLod(prefilteredEnv_map, c2s(omega_i), roughness * maxLevel).rgb;
 }
 
 
@@ -101,25 +101,23 @@ vec3 getPBRShader(){
 	float roughness = rma.r;
 	float alpha = pow(roughness, 2);
 	vec3 local_normal = getTBNMatrix() * normalize( vec3(normal_map_bt)*(2.0f - vec3( 1.0f )) );
-	vec3 omega_o_ws = - normalize( cam_pos.xyz - unified_position_ws );
-	if (dot(local_normal, omega_o_ws) < 0.0f) {
-		local_normal *= -1.0f;
-	}
+	vec3 omega_o_ws =  normalize( cam_pos.xyz - local_normal );
+
 	
-	float cosinus_theta_o = dot(local_normal, omega_o_ws);
+	float cosinus_theta_o = dot(unified_normal_ws, omega_o_ws);
 	
 
 	float Fo = Fresnell(cosinus_theta_o, 1.0f, 4.0); // 4.0 = IOR
 	float Fd = (1 - Fo) * (1 - metalic);
 	vec3 sb = getIntegration(cosinus_theta_o, roughness);
 
-	vec3 Ld = Fd * albedo * getIrradiance(local_normal); 
+	vec3 Ld = albedo * getIrradiance(local_normal); 
 	vec3 Lr = getPrefEnv(roughness, local_normal);
 
-	vec3 color = Ld + (Fo*sb.x + sb.y) * Lr;
+	vec3 color = (Fd * Ld + (Fo*sb.x + sb.y) * Lr) * ambient_occlusion;
 	
 	vec3 toned_color = tonemapping(color, 1.5f, 2.2f);
-	vec3 final_color = toned_color.xyz * ambient_occlusion;
+	vec3 final_color = toned_color.xyz ;
 	return final_color;
 }
 
@@ -127,11 +125,6 @@ vec3 getPBRShader(){
 void main( void ) {
 	vec3 color;
 	
-	//color = normalToColorSpace(unified_normal_ws);
-
-	//vec3 local_normal = getTBNMatrix() * normalize( vec3(getLocalNormal().bgr)*(2.0f - vec3( 1.0f )));
-	//color = getPrefEnv(0.1, local_normal);
-	//color = getPrefEnv(0.1, unified_normal_ws);
 
 	color = getPBRShader(); 
 

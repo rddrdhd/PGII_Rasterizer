@@ -44,10 +44,7 @@ void main( void )
 	vec4 hit_es = M * in_position;
 	unified_position_ws = hit_es.xyz / hit_es.w;
 	vec3 omega_i_ws = normalize( camera_pos.xyz - unified_position_ws );
-
-	if (dot(unified_normal_ws, omega_i_ws) < 0.0f) {
-		unified_normal_ws *= -1.0f;
-	}
+	
 
 	tex_coord = vec2(in_texcoord.x, 1.0f - in_texcoord.y);
 	mat_index = in_material_index;
