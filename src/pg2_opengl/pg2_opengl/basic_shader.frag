@@ -146,12 +146,11 @@ void main( void ) {
 
 	//color = getPBRShader(); 
 
-	//TODO - only albedo seems working right
-	vec3 albedo_bt = materials[mat_index].diffuse * texture(sampler2D(materials[mat_index].tex_diffuse), tex_coord).bgr;
-	vec3 rma_bt = materials[mat_index].rma * texture(sampler2D(materials[mat_index].tex_rma), tex_coord).bgr;
-	vec3 normal_map_bt = materials[mat_index].normal * texture(sampler2D(materials[mat_index].tex_normal), tex_coord).bgr;
-	color = normal_map_bt;
+	//TODO - rma does not seem to work right
+	vec3 albedo_bt = materials[mat_index].diffuse.rgb * texture( sampler2D( materials[mat_index].tex_diffuse ),tex_coord ).rgb;
+	vec3 rma_bt = materials[mat_index].rma.rgb * texture(sampler2D(materials[mat_index].tex_rma), tex_coord).bgr;
+	vec3 normal_map_bt = materials[mat_index].normal.rgb * texture(sampler2D(materials[mat_index].tex_normal), tex_coord).rgb;
+	color = rma_bt;
 	FragColor = vec4(color, 1.0f);
-
 }
 	

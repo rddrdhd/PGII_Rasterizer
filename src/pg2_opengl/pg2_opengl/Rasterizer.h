@@ -18,10 +18,10 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 #pragma pack(push, 1)
 struct GLMaterial {
 	// DIFFUSE
-	Color3f albedo;
-	GLbyte pad0[4];
-	GLuint64 tex_diffuse_handle{ 0 };
-	GLbyte pad1[8];
+	Color3f albedo; // 3 * GB
+	GLbyte pad0[4]; // + 4 B = 16 B
+	GLuint64 tex_diffuse_handle{ 0 }; // 1 * 8 B
+	GLbyte pad1[8]; // + 8 B = 16 B
 
 	// ROUGHNESS, METALNESS, ALPHA
 	Color3f rma;	// alpha = 1
@@ -35,7 +35,8 @@ struct GLMaterial {
 	GLuint64 tex_normal_handle{ 0 };
 	GLbyte pad5[8];
 };
-#pragma
+#pragma pack( pop )
+
 
 class Rasterizer {
 

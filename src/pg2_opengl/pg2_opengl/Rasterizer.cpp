@@ -79,22 +79,23 @@ int Rasterizer::initOpenGL() {
 int Rasterizer::loadMesh(const std::string& file_name)
 {
 	LoadOBJ(file_name, this->scene_, this->materials_, false);
+
+	auto diff_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic6-alb.png");
+	this->materials_["white_plastic"]->set_texture(Map::kDiffuse, diff_tex);
+	auto rma_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
+	this->materials_["white_plastic"]->set_texture(Map::kRMA, rma_tex);
+	auto nor_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
+	this->materials_["white_plastic"]->set_texture(Map::kNormal, nor_tex);
 	
 	initMaterials();
 	
 	 
-	if (file_name == "../../../data/cube/piece_02.obj") {
+	if (false){//file_name == "../../../data/cube/piece_02.obj") {
 		//ONLY FOR ONE MATERIAL:
 		this->initRMATexture("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
 		this->initNormalTexture("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
 		this->initAlbedoTexture("D:/School/PGII/project/pg2/data/cube/scuffed-plastic6-alb.png");
 
-		auto diff_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/plastic_02_rma.png");
-		this->materials_["white_plastic"]->set_texture(Map::kDiffuse, diff_tex);
-		auto rma_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic6-alb.png");
-		this->materials_["white_plastic"]->set_texture(Map::kRMA, rma_tex);
-		auto nor_tex = std::make_shared<Texture3u>("D:/School/PGII/project/pg2/data/cube/scuffed-plastic-normal.png");
-		this->materials_["white_plastic"]->set_texture(Map::kNormal, nor_tex);
 	}
 	
 
@@ -186,9 +187,9 @@ int Rasterizer::initBuffersAndTextures()
 	this->setPrefilteredEnvMap(); // TEXTURE 1
 	this->setIntegrationMap(); // TEXTURE 2
 
-	this->setRMATexture(); // TEXTURE 4
-	this->setNormalTexture(); // TEXTURE 5
-	this->setAlbedoTexture(); // TEXTURE 6
+	//this->setRMATexture(); // TEXTURE 4
+	//this->setNormalTexture(); // TEXTURE 5
+	//this->setAlbedoTexture(); // TEXTURE 6
 
 	return 0;
 }
